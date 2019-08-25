@@ -1,0 +1,83 @@
+﻿Step 1: Tạo thư mục module AHT Blog
+
+Tên của module được định nghĩa thành hai phần “VendorName_ModuleName”. Phần thứ nhất là tên nhà cung cấp, phần thứ hai là tên của module: Ví dụ: Magento_Blog, AHT_OnePageCheckout. Đầu tiên chúng ta tạo các thư mục:
+
+app/code/AHT/Blog
+
+Step 2: Tạo file etc/module.xml.
+Sau đó, cần phải tạo folder etc và thêm tập tin module.xml
+nội dung :
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:Module/etc/module.xsd">
+	<module name="AHT_Blog" setup_version="1.0.0">
+	</module>
+</config>
+Step 3: Thêm tập tin registration.php
+
+Trong bước này, chúng ta sẽ thêm một tệp registration.php trong thư mục Blog với nội dung:
+<?php 
+\Magento\Framework\Component\ComponentRegistrar::register(
+	\Magento\Framework\Component\ComponentRegistrar::MODULE,
+	'AHT_Blog',
+	__DIR__	
+);
+Step 4: Kích hoạt module
+
+Sau bước 3 thì chúng ta đã hoàn tất việc tạo module Blog. Và giờ sẽ kích hoạt module trong bước này
+
+Chạy lệnh:
+
+php bin/magento module:status
+
+Bạn sẽ thấy các module đang bị vô hiệu hóa:
+ Để kích hoạt chúng, chạy lệnh:
+
+php bin/magento module:enable AHT_Blog
+
+Bạn cũng có thể sử dụng một cách khác để kích hoạt module, đi đến tập tin config.php :
+
+app/etc/config.php
+
+Bạn sẽ thấy một danh sách các module ở đó, giờ thì chỉ cần thêm module cần kích hoạt vào là xong:
+Sau bước này, khi bạn mở trang web của bạn trong trình duyệt, bạn sẽ nhận được một thông báo lỗi rằng : Please upgrade your database: Run “bin/magento setup:upgrade” from the Magento root directory.
+
+ Hãy chạy lệnh:
+
+php bin/magento setup:upgrade
+
+Sau khi hoàn thành, khi bạn mở trang web của mình trong trình duyệt, bạn sẽ thấy bố cục của trang web bị hỏng
+Chạy lệnh:
+
+php bin/magento setup:static-content:deploy -f
+
+Sau khi hoàn tất, có thể nhìn thấy module vừa tạo từ backend tại System Configuration -> Advanced -> Disable Modules Output.
+
+Step 5: Tạo tập tin routes.xml.
+ Giờ chúng ta sẽ tạp một controller để kiểm tra module.
+
+Trước ki tạo controller, ta sẽ tạo một route cho module Blog.
+
+Route trong magento được chia làm 3 phần: Route frontname, controller và action:
+
+http://<yourhost.com>/index.php/route_name/controller/action
+
+route_name là tên duy nhất, được đặt trong routes.xml.
+
+controller là thư mục nằm trong thư mục Controller.
+
+action là một lớp với phương thức execute để xử lý request.
+
+ Để tạo route, cần tạo tệp routes.xml
+
+app/code/AHT/Blog/etc/frontend/routes.xml
+ vì đây là một frontend route, chúng ta thêm nó vào frontend/ folder hoặc chúng ta cần thêm nó vào adminhtml/ folder
+
+ Nội dung như sau:
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:App/etc/routes.xsd">
+	<route id="standard">
+		<route frontName="blog" id="blog">
+			<module name="AHT_Blog"/>
+		</route>
+	</route>
+</config>
