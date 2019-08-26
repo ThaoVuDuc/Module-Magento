@@ -81,3 +81,127 @@ app/code/AHT/Blog/etc/frontend/routes.xml
 		</route>
 	</route>
 </config>
+
+Step 6: Tạo tệp controller
+Ở bước này sẽ tiếp tục với controller và action
+Thư mục và tập tin cần tạo như sau:
+ app/code/AHT/Blog/Controller/Index/Test.php
+
+ Với nội dung:
+<?php
+namespace AHT\Blog\Controller\Index;
+/**
+*
+*/
+class Test extends \Magento\Framework\App\Action\Action
+{
+	protected $_pageFactory;
+
+	public function __construct(\Magento\Framework\App\Action\Context $context, \Magento\Framework\View\Result\PageFactory $pageFactory)
+	{
+		$this->_pageFactory = $pageFactory;
+		return parent::__construct($context);
+	}
+
+	public function execute()
+	{
+		echo "AHT Blog";
+		exit;
+	}
+}
+au đó chạy lệnh:
+
+php bin/magento cache:clean .
+ 
+
+Bây giờ URL sẽ hiển thị dưới dạng:
+
+http://<yourhost.com>/blog/index/test
+
+ Sau khi hoàn thành tất cả các bước, đầu ra  AHT Blog sẽ hiển thị trong trình duyệt khi mở URL.
+Step 7: Tạo View: Block, Layouts, Templates
+Đầu tiên, ta cần tạo một controller để gọi tập tin layout .xml
+
+File: app/code/AHT/Blog/Controller/Index/Index.php
+ Nội dung như sau:
+<?php
+namespace AHT\Blog\Controller\Index;
+
+class Index extends \Magento\Framework\App\Action\Action
+{
+	protected $_pageFactory;
+
+	public function __construct(
+		\Magento\Framework\App\Action\Context $context,
+		\Magento\Framework\View\Result\PageFactory $pageFactory)
+	{
+		$this->_pageFactory = $pageFactory;
+		return parent::__construct($context);
+	}
+
+	public function execute()
+	{
+		return $this->_pageFactory->create();
+	}
+}
+ Phải khai báo PageFactory và tạo nó trong phương thức execute để hiển thị view.
+
+ Sau đó, tạo tập tin layout .xml:
+
+ Layout là đường dẫn chính của lớp view trong module . Tập tin layout là một tập tin XML mà sẽ xác định cấu trúc trang và sẽ được đặt trong thư mục {module_root}/view/{area}/layout/ . Đường dẫn Area có thể là  frontend hoặc adminhtml trong đó xác định nơi layout được áp dụng. Đây là một tập tin layout đặc biệt default.xml mà sẽ được áp dụng cho tất cả các trang trong khu vực đó.
+
+ Trong khi đó, tập tin layout sẽ có tên như định dạng : {router_name}_{controller_name}_{action_name}.xml. Sau khi hiển thị trang, Magento sẽ kiểm tra tập tin layout để tìm handle cho trang và sau đó tải các Block và Template. Chúng ta sẽ tạo một tập tin xử lý layout cho module này:
+File: app/code/AHT/Blog/view/frontend/layout/blog_index_index.xml
+
+Với nội dung:
+<?xml version="1.0" ?>
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" layout="1column" xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+	<referenceContainer name="content">
+		<block class="AHT\Blog\Block\Index" name="blog_index" template="AHT_Blog::index.phtml" />
+	</referenceContainer>
+</page>
+Trong tập tin này, ta sẽ khai báo block và template cho trang:
+
+Block class: AHT\Blog\Block\Index
+
+Template file: AHT_Blog::index.phtml
+
+name: Đây là một thuộc tính bắt buộc và được sử dụng để xác định một block như một tham chiếu
+
+Tạo Block: Tập tin Block nên chứa tất cả các view logic được yêu cầu, không nên chứa bất kì một loại html hoặc css nào. Tập tin Block được cho là có tất cả application view logic.
+
+Tạo một file :  app/code/AHT/Blog/Block/Index.php
+
+Nội dung như sau:
+<?php
+namespace AHT\Blog\Block;
+
+class Index extends \Magento\Framework\View\Element\Template
+{
+	public function __construct(\Magento\Framework\View\Element\Template\Context $context)
+	{
+		parent::__construct($context);
+	}
+
+	public function getBlogInfo()
+	{
+		return __('AHT Blog module');
+	}
+
+	public function getPosts()
+	{
+		$post = $this->_postFactory->create();
+		$collection = $post->getCollection();
+		return $collection;
+	}
+}
+ Mỗi block trong M2 phải extend từ Magento\Framework\View\Element\Template. Trong block này, ta sẽ khai báo một phương thức getBlogInfo() để hiển thị chuỗi “AHT Blog module”. Ta sẽ sử dụng nó trong tập template.
+
+ Tạo tập tin template  index.phtml
+<?php
+
+/**
+ * @var \AHT\Blog\Block\Index $block
+ */
+
+echo $block->getBlogInfo();
