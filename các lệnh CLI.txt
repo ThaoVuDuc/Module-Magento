@@ -1,0 +1,153 @@
+﻿Bước 1:
+
+cd <your Magento install dir>/bin
+
+ 
+
+Bước 2:
+
+php magento <command>
+
+Để hiển thị danh sách các command trong magento
+
+php magento list
+
+ 
+
+Để xem trợ giúp về 1 lệnh:
+
+php magento help <command>
+
+ 
+
+ 
+
+ví dụ: php magento help setup:install
+
+
+
+Tìm hiểu một số command sau:
+
+Setup upgrade
+
+php bin/magento setup:upgrade
+
+In case you want to keep pub/static files while installing/updating database, apply following command:
+
+php bin/magento setup:upgrade --keep-generated
+
+Clean Cache
+
+php bin/magento cache:clean
+
+Flush Cache
+
+php bin/magento cache:flush
+
+View cache status
+
+php bin/magento cache:status
+
+Enable Cache
+
+php bin/magento cache:enable [cache_type]
+
+Disable Cache
+
+php bin/magento cache:disable [cache_type]
+
+Deploy static content
+
+php bin/magento setup:static-content:deploy
+
+Deploy static content for particular language
+
+php bin/magento setup:static-content:deploy en_US
+
+Deploy static content for Magento backend theme
+
+php bin/magento setup:static-content:deploy --theme="Magento/backend"
+
+Deploy static content for specific themes
+
+php bin/magento setup:static-content:deploy --theme Magento/luma --theme Magento/second_theme
+
+Deploy exclude themes on static content while does not minify html files
+
+php bin/magento setup:static-content:deploy en_US --exclude-theme Magento/luma --no-html-minify
+
+Reindex
+
+php bin/magento indexer:reindex
+
+View indexer list
+
+php bin/magento indexer:info
+
+View indexer status
+
+php bin/magento indexer:status
+
+Show all indexers mode
+
+php bin/magento indexer:show-mode
+
+See all modules status
+
+php bin/magento module:status
+
+Enable module
+
+php bin/magento module:enable Namespace_Module
+
+Disable module
+
+php bin/magento module:disable Namespace_Module
+
+Uninstall module
+
+php bin/magento module:uninstall Namespace_Module
+
+Check current mode
+
+php bin/magento deploy:mode:show
+
+Change to developer mode
+
+php bin/magento deploy:mode:set developer
+
+Change to production mode
+
+php bin/magento deploy:mode:set production
+
+Run the single-tenant Compiler
+
+php bin/magento setup:di:compile
+
+Unlock Admin user
+
+php bin/magento admin:user:unlock adminusername
+
+Enable maintenance mode
+
+php bin/magento maintenance:enable
+
+Enable maintenance mode for all clients except 192.0.0.1 and 192.0.0.1:
+
+php bin/magento maintenance:enable --ip=192.0.0.1 --ip=192.0.0.2
+
+Clear the list of IPs.
+
+php bin/magento maintenance:enable --ip=none
+
+Disable maintenance mode
+
+php bin/magento maintenance:disable
+
+Check maintenance mode status
+
+php bin/magento maintenance:status
+
+Allow IP on maintenance mode
+
+php bin/magento maintenance:allow-ips --ip=192.0.0.1 --ip=192.0.0.2
