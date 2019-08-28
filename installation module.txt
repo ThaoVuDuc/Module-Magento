@@ -205,3 +205,181 @@ class Index extends \Magento\Framework\View\Element\Template
  */
 
 echo $block->getBlogInfo();
+
+cài đặt module trong backend
+* để tạo admin module MyCompany ExampleAdminNewPage, cần phải hoàn tất các bước sau :
+Bước 1 : Tạo thư mục module MyCompany
+Bước 2 : tạo file etc/module.xml
+Bước 3 : Tạo file etc/registration.php
+Bước 4 : Kích hoạt module
+Bước 5 : Tạo file routes.xml
+Bước 6 : Tạo file controller
+Bước 7 : Tạo View, Block, Layout, Template
+
+Step 1: Tạo thư mục module
+ app/code/MyCompany/ExampleAdminNewPage
+Step 3 : Tạo file etc/module.xml
+sau đó, cần phải tạo folder và thêm tập tin module.xml
+app/code/MyCompany/ExampleAdminNewPage/etc/module/xml
+thêm nội dung tập tin :
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:Module/etc/module.xsd">
+	<module name="MyCompany_ExampleAdminNewPage" setup_version="1.0.0">
+	</module>
+</config>
+Step 3 : Thêm tập tin registration.php
+trong bước này, chúng ta sẽ thêm một tệp registration.php trong thư mục ExampleAdminNewPage với nội dung :
+<?php 
+\Magento\Framework\Component\ComponentRegistrar::register(
+	\Magento\Framework\Component\ComponentRegistrar::MODULE,
+	'MyCompany_ExampleAdminNewPage',
+	__DIR__	
+);
+Step 4 : kích hoạt module
+sau bước 3 thì chúng ta đã hoàn tất việc tạo module MyCompany, và giờ sẽ kích hoạt module trong bước này, chạy lệnh :
+php bin/magento module:status
+bạn sẽ thấy các module đang bị vô hiệu hóa:
+List of disabled modules:
+MyCompany_ExampleAdminNewPage
+Bạn cũng có thể sử dụng một cách khác để kích hoạt module, đi đến tập tin config.php : app\etc\config.php Bạn sẽ thấy một danh sách các module ở đó, giờ thì chỉ cần thêm module cần kích hoạt vào là xong :'MyCompany_ExampleAdminNewPage' => 1,
+sau các bước này, khi bạn mở trang web của bạn trong trình duyệt, bạn sẽ nhận được một thông báo lỗi rằng : Please Upgrade your database : Run "bin/magento setup:upgrade" from magento root directory
+hãy chạy lệnh : php bin/magento setup:upgrade
+sau khi hoàn thành, khi bạn mở trang web của mình trong trình duyệt bạn sẽ thấy bố cục của trang web bị hỏng
+Chạy lệnh:
+
+php bin/magento setup:static-content:deploy -f
+
+ Sau khi hoàn tất, có thể nhìn thấy module vừa tạo từ backend tại System Configuration -> Advanced -> Disable Modules Output.
+
+Bước 5 Tạo file routes.xml
+Tạo tập tin etc/adminhtml/routes.xml
+nội dung :
+
+<?xml version="1.0" ?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:App/etc/routes.xsd">
+	<router id="admin">
+		<route frontName="exampleadminnewpage" id="exampleadminnewpage">
+			<module name="MyCompany_ExampleAdminNewPage" />
+		</route>
+	</router>
+</config>
+ Tạo tập tin etc/adminhtml/menu.xml :
+<?xml version="1.0" ?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Backend:etc/menu.xsd">
+	<menu>
+		<add id="MyCompany_ExampleAdminNewPage::greetings" 
+			title="Greetings"
+			translate="title"
+			module="MyCompany_ExampleAdminNewPage"
+			parent="Magento_Backend::content"
+			sortOrder="50"
+			dependsOnModule="MyCompany_ExampleAdminNewPage"
+			resource="MyCompany_ExampleAdminNewPage::greetings"/>
+		<add id="MyCompany_ExampleAdminNewPage::greetings_helloworld"
+			title="Hello World"
+			translate="title"
+			module="MyCompany_ExampleAdminNewPage"
+			parent="MyCompany_ExampleAdminNewPage::greetings"
+			sortOrder="10"
+			dependsOnModule="MyCompany_ExampleAdminNewPage"
+			action="exampleadminnewpage/helloworld"
+			resource="MyCompany_ExampleAdminNewPage::greetings"/>
+	</menu>
+</config>
+Bước 6 Tạo controller
+Tạo tập tin Controller/Adminhtml/HelloWorld/Index.php :
+<?php
+namespace MyCompany\ExampleAdminNewPage\Controller\Adminhtml\HelloWorld;
+
+class Index extends \Magento\Backend\App\Action
+{
+	/**
+	 * @var  \Magento\Framework\View\Result\PageFactory;
+	 */
+	protected $resultPageFactory;
+
+	/**
+	 * Constructor
+	 *
+	 * @param \Magento\Backend\App\Action\Context $context
+	 * @param \Magento\Framework\View\Result\PageFactory $resultPageFactory
+	 */
+
+	public function __construct(
+		\Magento\Backend\App\Action\Context $context,
+		\Magento\Framework\View\Result\PageFactory $resultPageFactory
+	)
+	{
+		parent::__construct($context);
+		$this->resultPageFactory = $resultPageFactory;
+	}
+
+	/**
+	 * Load the page definded in View/adminhtml/layout/exampleadminnewpage_helloworld_index.xml
+	 * @return \Magento\Framework\View\Result\Page
+	 */
+
+	public function execute()
+	{
+		return $resultPage =  $this->resultPageFactory->create();
+	}
+
+}
+Bước 7. Tạo View, Block, layout, tmplates
+Tạo mới 2 thư mục : view/adminhtml/layout và view/adminhtml/templates
+Trong thư mục layout tạo file exampleadminnewpage_helloworld_index.xml :
+<?xml version="1.0" ?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+	<head>
+		<title>
+			Greetings
+		</title>
+	</head>
+	<body>
+		<referenceContainer name="content">
+			<block class="Magento\Backend\Template" name="block_adminhmtl_index" template="MyCompany_ExampleAdminNewPage::helloworld.phtml" />
+		</referenceContainer>
+	</body>
+
+</config>
+Trong thư mục templates tạo file helloworld.phtml :
+<p>Hello World </p>
+Cuối cùng chạy lần lượt các lệnh :
+
+php bin/magento setup:upgrade
+
+php bin/magento setup:static-content:deploy -f
+
+Sau khi hoàn thành các bước trên, bạn đăng nhập vào admin magento sẽ nhận được kết quả như hình :
+Thêm tập tin Block/Adminhtml/Index.php với nội dung :
+<?php
+namespace MyCompany\ExampleAdminNewPage\Block\Adminhtml;
+
+class Index extends \Magento\Framework\View\Element\Template
+{
+	public function __construct(\Magento\Framework\View\Element\Template\Contex $context)
+	{
+		parent::__construct($context);
+	}
+
+	public function helloWorld()
+	{
+		return __('Hello World !');
+	}
+
+	public function getPosts()
+	{
+		$post = $this->_postFactory->create();
+		$collection = $post->getCollection();
+		return $collection;
+	}
+}
+
+?>
+Để gọi được block này, sửa lại nội dung file helloworld.phtml như sau:
+<?php
+/**
+ * @var \MyCompany\ExampleAdminNewPage\Block\Adminhtml\Index $blockHello;
+ */
+
+echo $blockHello->helloWorld();
