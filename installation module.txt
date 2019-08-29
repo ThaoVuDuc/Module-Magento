@@ -337,7 +337,7 @@ Trong thư mục layout tạo file exampleadminnewpage_helloworld_index.xml :
 	</head>
 	<body>
 		<referenceContainer name="content">
-			<block class="Magento\Backend\Template" name="block_adminhmtl_index" template="MyCompany_ExampleAdminNewPage::helloworld.phtml" />
+			<block class="MyCompany\ExampleAdminNewPage\Block\Adminhtml\Index" name="exampleadminnewpage_adminhmtl_index" template="MyCompany_ExampleAdminNewPage::helloworld.phtml" />
 		</referenceContainer>
 	</body>
 
