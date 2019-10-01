@@ -1,0 +1,518 @@
+﻿Để tạo Grid bằng UI Component ta thực hiện các bước sau:
+1. tạo module 
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:Module/etc/module.xsd">
+	<module name="VendorName_ModuleName" setup_version="1.0.0">
+	</module>
+</config>
+Tạo bảng 
+InstallSchema:
+
+<?php
+namespace Blog\Post\Setup;
+class InstallSchema implements \Magento\Framework\Setup\InstallSchemaInterface
+{
+    public function install(\Magento\Framework\Setup\SchemaSetupInterface $setup, \Magento\Framework\Setup\ModuleContextInterface $context)
+    {
+        $installer = $setup;
+        $installer->startSetup();
+        //START: install stuff
+        //END:   install stuff
+        
+        //START table setup
+        $table = $installer->getConnection()->newTable(
+            $installer->getTable('aht_blog_contact')
+        )->addColumn(
+            'contact_id',
+            \Magento\Framework\DB\Ddl\Table::TYPE_INTEGER,
+            null,
+            [ 'identity' => true, 'nullable' => false, 'primary' => true, 'unsigned' => true, ],
+            'Entity ID'
+        )->addColumn(
+            'name',
+            \Magento\Framework\DB\Ddl\Table::TYPE_TEXT,
+            255,
+            [ 'nullable' => false, ],
+            'Demo name'
+        )->addColumn(
+            'email',
+            \Magento\Framework\DB\Ddl\Table::TYPE_TEXT,
+            255,
+            [ 'nullable' => false, ],
+            'Demo email'
+        )->addColumn(
+            'comment',
+            \Magento\Framework\DB\Ddl\Table::TYPE_TEXT,
+            255,
+            [ 'nullable' => false, 'default' => '0' ],
+            'Demo comment' 
+        )->addColumn(
+            'creation_time',
+            \Magento\Framework\DB\Ddl\Table::TYPE_TIMESTAMP,
+            null,
+            [ 'nullable' => false, 'default' => \Magento\Framework\DB\Ddl\Table::TIMESTAMP_INIT, ],
+            'Creation Time'
+        )->addColumn(
+            'update_time',
+            \Magento\Framework\DB\Ddl\Table::TYPE_TIMESTAMP,
+            null,
+            [ 'nullable' => false, 'default' => \Magento\Framework\DB\Ddl\Table::TIMESTAMP_INIT_UPDATE, ],
+            'Modification Time'
+        )->addColumn(
+            'is_active',
+            \Magento\Framework\DB\Ddl\Table::TYPE_SMALLINT,
+            null,
+            [ 'nullable' => false, 'default' => '1', ],
+            'Is Active'
+        );
+        $installer->getConnection()->createTable($table);
+        //END   table setup
+$installer->endSetup();
+    }
+}
+
+Nếu lỡ enable module trước khi tạo bảng thì sử dụng UpgradeSchema này nữa
+<php
+namespace Blog\Post\Setup;
+
+use Magento\Framework\Setup\UpgradeSchemaInterface;
+use Magento\Framework\Setup\SchemaSetupInterface;
+use Magento\Framework\Setup\ModuleContextInterface;
+
+class UpgradeSchema implements UpgradeSchemaInterface
+{
+	public function upgrade(SchemaSetupInterface $setup, ModuleContextInterface $context)
+	{
+		$installer = $setup;
+
+		$installer->startSetup();
+
+		if (version_compare($context->getVersion(), '1.0.1', '<')) {
+			if (!$installer->tableExists('aht_blog_contact')) {
+				$table = $installer->getConnection()->newTable(
+                    $installer->getTable('aht_blog_contact')
+                )->addColumn(
+                    'contact_id',
+                    \Magento\Framework\DB\Ddl\Table::TYPE_INTEGER,
+                    null,
+                    [ 'identity' => true, 'nullable' => false, 'primary' => true, 'unsigned' => true, ],
+                    'Entity ID'
+                )->addColumn(
+                    'name',
+                    \Magento\Framework\DB\Ddl\Table::TYPE_TEXT,
+                    255,
+                    [ 'nullable' => false, ],
+                    'Demo name'
+                )->addColumn(
+                    'email',
+                    \Magento\Framework\DB\Ddl\Table::TYPE_TEXT,
+                    255,
+                    [ 'nullable' => false, ],
+                    'Demo email'
+                )->addColumn(
+                    'comment',
+                    \Magento\Framework\DB\Ddl\Table::TYPE_TEXT,
+                    255,
+                    [ 'nullable' => false, 'default' => '0' ],
+                    'Demo comment' 
+                )->addColumn(
+                    'creation_time',
+                    \Magento\Framework\DB\Ddl\Table::TYPE_TIMESTAMP,
+                    null,
+                    [ 'nullable' => false, 'default' => \Magento\Framework\DB\Ddl\Table::TIMESTAMP_INIT, ],
+                    'Creation Time'
+                )->addColumn(
+                    'update_time',
+                    \Magento\Framework\DB\Ddl\Table::TYPE_TIMESTAMP,
+                    null,
+                    [ 'nullable' => false, 'default' => \Magento\Framework\DB\Ddl\Table::TIMESTAMP_INIT_UPDATE, ],
+                    'Modification Time'
+                )->addColumn(
+                    'is_active',
+                    \Magento\Framework\DB\Ddl\Table::TYPE_SMALLINT,
+                    null,
+                    [ 'nullable' => false, 'default' => '1', ],
+                    'Is Active'
+                )->setComment('Blog Contact Table');
+                $installer->getConnection()->createTable($table);
+                $installer->getConnection()->addIndex(
+					$installer->getTable('aht_blog_contact'),
+					$setup->getIdxName(
+						$installer->getTable('aht_blog_contact'),
+						['name', 'url_key', 'image', 'content'],
+						\Magento\Framework\DB\Adapter\AdapterInterface::INDEX_TYPE_FULLTEXT
+					),
+					['name', 'email', 'comment'],
+					\Magento\Framework\DB\Adapter\AdapterInterface::INDEX_TYPE_FULLTEXT
+				);
+			}
+		}
+
+		$installer->endSetup();
+	}
+}
+
+- Tạo menu cho Grid: trong file Blog/Post/etc/adminhtml/menu.xml
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Backend:etc/menu.xsd">
+    <menu>	
+		<add id="Blog_Post::post" 
+      	title="Post" 
+      	translate="title" 
+      	module="Blog_Post" 
+      	sortOrder="51" 
+      	dependsOnModule="Blog_Post" 
+      	resource="Blog_Post::post"/>
+
+        <add id="Blog_Post::contact" 
+      	title="Contact" 
+      	translate="title" 
+      	module="Blog_Post" 
+      	parent="Blog_Post::post" 
+      	sortOrder="10" 
+      	dependsOnModule="Blog_Post" 
+      	action="post/index/index" 
+      	resource="Blog_Post::contact"/>
+
+        <add id="Blog_Post::contact_config" 
+      	title="Configuration" 
+      	translate="title" 
+      	module="Blog_Post" 
+      	parent="Blog_Post::post" 
+      	sortOrder="10" 
+      	dependsOnModule="Blog_Post" 
+      	action="adminhtml/system_config/edit/section/post" 
+      	resource="Blog_Post::contact_config"/>
+        
+    </menu>
+</config>
+Tạo Controller Blog/Post/Controller/Adminhtml/Index/Index.php với nội dung:
+
+<?php
+namespace Blog\Post\Controller\Adminhtml\Index;
+
+class Index extends \Magento\Backend\App\Action
+{
+
+    const ADMIN_RESOURCE = 'Index';
+
+    protected $resultPageFactory;
+
+    public function __construct(
+        \Magento\Backend\App\Action\Context $context,
+        \Magento\Framework\View\Result\PageFactory $resultPageFactory)
+    {
+        $this->resultPageFactory = $resultPageFactory;
+        parent::__construct($context);
+    }
+
+    public function execute()
+    {
+        return $this->resultPageFactory->create();
+    }
+}
+
+Rồi, tiếp đến là layout post_index_index.xml:
+
+<?xml version="1.0"?>
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+<referenceBlock name="content">
+    <uiComponent name="post_test_listing" />
+</referenceBlock></page>
+
+Trong file layout ta thấy rằng cần phải tạo thêm UI Component post_test_listing.xml
+Tạo file Blog/Post/view/adminhtml/ui_component/post_test_listing.xml với nội dung như sau:4
+
+<?xml version="1.0" ?>
+<listing xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Ui:etc/ui_configuration.xsd">
+    <argument name="data" xsi:type="array">
+        <item name="js_config" xsi:type="array">
+            <!-- ta sẽ khai báo data_source, nó sẽ liên kết với data_source trong file di để connect với CSDL-->
+            <item name="provider" xsi:type="string">post_test_listing.post_test_listing_data_source</item>
+            <item name="deps" xsi:type="string">post_test_listing.post_test_listing_data_source</item>
+        </item>
+
+        <item name="spinner" xsi:type="string">post_test_columns</item>
+
+        <item name="buttons" xsi:type="array">
+            <item name="add" xsi:type="array">
+                <item name="name" xsi:type="string">add</item>
+                <item name="label" xsi:type="string" translate="true">Add a new Contact</item>
+                <item name="class" xsi:type="string">primary</item>
+                <item name="url" xsi:type="string">*/*/newAction</item>
+            </item>
+        </item>
+    </argument>
+    <!-- tham số class xác định đối tượng được sử dụng -->
+    <dataSource name="post_test_listing_data_source">
+        <argument name="dataProvider" xsi:type="configurableObject">
+
+            <argument name="class" xsi:type="string">ContactsGridDataProvider</argument>
+            <argument name="name" xsi:type="string">post_test_listing_data_source</argument>
+            <argument name="primaryFieldName" xsi:type="string">contact_id</argument>
+            <argument name="requestFieldName" xsi:type="string">id</argument>
+            <argument name="data" xsi:type="array">
+                <item name="config" xsi:type="array">
+                    <item name="component" xsi:type="string">Magento_Ui/js/grid/provider</item>
+                    <item name="update_url" xsi:type="url" path="mui/index/render" />
+                    <item name="storageConfig" xsi:type="array">
+                        <item name="indexField" xsi:type="string">contact_id</item>
+                    </item>
+                </item>
+            </argument>
+        </argument>
+    </dataSource>
+    
+    <!-- khai báo các cột của Grid -->
+    <columns name="post_test_columns">
+        <argument name="data" xsi:type="array">
+            <item name="config" xsi:type="array">
+                <item name="storageConfig" xsi:type="array">
+                    <item name="provider" xsi:type="string">post_test_listing.post_test_listing.listing_top.bookmarks</item>
+                    <item name="namespace" xsi:type="string">current</item>
+                </item>
+                <item name="childDefaults" xsi:type="array">
+                    <item name="controlVisibility" xsi:type="boolean">true</item>
+                    <item name="storageConfig" xsi:type="array">
+                        <item name="provider" xsi:type="string">post_test_listing.post_test_listing.listing_top.bookmarks</item>
+                        <item name="root" xsi:type="string">columns.${ $.index }</item>
+                        <item name="namespace" xsi:type="string">current.${ $.storageConfig.root}</item>
+                    </item>
+                </item>
+            </item>
+        </argument>
+        <selectionsColumn name="ids">
+            <argument name="data" xsi:type="array">
+                <item name="config" xsi:type="array">
+                    <item name="indexField" xsi:type="string">contact_id</item>
+                </item>
+            </argument>
+        </selectionsColumn>
+        <!-- cột ID -->
+        <column name="contact_id">
+            <argument name="data" xsi:type="array">
+                <item name="config" xsi:type="array">
+                    <item name="filter" xsi:type="string">textRange</item>
+                    <item name="sorting" xsi:type="string">asc</item>
+                    <item name="label" xsi:type="string" translate="true">ID</item>
+                </item>
+            </argument>
+        </column>
+        <!-- cột Name -->
+        <column name="name">
+            <argument name="data" xsi:type="array">
+                <item name="config" xsi:type="array">
+                    <item name="visible" xsi:type="boolean">true</item>
+                    <item name="dataType" xsi:type="string">text</item>
+                    <item name="formElement" xsi:type="string">input</item>
+                    <item name="source" xsi:type="string">contact</item>
+                    <item name="dataScope" xsi:type="string">name</item>
+                    <item name="filter" xsi:type="string">text</item>
+                    <item name="label" xsi:type="string" translate="true">Name</item>
+                    <item name="validation" xsi:type="array">
+                        <item name="required-entry" xsi:type="boolean">true</item>
+                    </item>
+                </item>
+            </argument>
+        </column>
+        <!-- cột Email -->
+        <column name="email">
+            <argument name="data" xsi:type="array">
+                <item name="config" xsi:type="array">
+                    <item name="visible" xsi:type="boolean">true</item>
+                    <item name="dataType" xsi:type="string">text</item>
+                    <item name="formElement" xsi:type="string">input</item>
+                    <item name="source" xsi:type="string">contact</item>
+                    <item name="dataScope" xsi:type="string">email</item>
+                    <item name="filter" xsi:type="string">text</item>
+                    <item name="label" xsi:type="string" translate="true">Email</item>
+                    <item name="validation" xsi:type="array">
+                        <item name="required-entry" xsi:type="boolean">true</item>
+                    </item>
+                </item>
+            </argument>
+        </column>
+	<!-- cột Comment -->
+        <column name="comment">
+            <argument name="data" xsi:type="array">
+                <item name="config" xsi:type="array">
+                    <item name="visible" xsi:type="boolean">true</item>
+                    <item name="dataType" xsi:type="string">text</item>
+                    <item name="formElement" xsi:type="string">input</item>
+                    <item name="source" xsi:type="string">contact</item>
+                    <item name="dataScope" xsi:type="string">comment</item>
+                    <item name="filter" xsi:type="string">text</item>
+                    <item name="label" xsi:type="string" translate="true">Comment</item>
+                    <item name="validation" xsi:type="array">
+                        <item name="required-entry" xsi:type="boolean">false</item>
+                    </item>
+                </item>
+            </argument>
+        </column>
+	<!-- cột Action -->
+        <actionsColumn name="actions" class="Blog\Post\Ui\Component\Listing\Column\ContactsActions">
+            <argument name="data" xsi:type="array">
+                <item name="config" xsi:type="array">
+                    <item name="resizeEnabled" xsi:type="boolean">false</item>
+                    <item name="resizeDefaultWidth" xsi:type="string">107</item>
+                    <item name="indexField" xsi:type="string">contacts_id</item>
+                </item>
+            </argument>
+        </actionsColumn>
+    </columns>
+
+</listing>
+
+Tiếp theo, tạo file Blog/Post/UI/Component/Listing/Column/ContactsActions.php để sử lý cột Action
+<?php
+namespace Blog\Post\Ui\Component\Listing\Column;
+
+use Magento\Framework\View\Element\UiComponent\ContextInterface;
+use Magento\Framework\View\Element\UiComponentFactory;
+use Magento\Ui\Component\Listing\Columns\Column;
+use Magento\Framework\UrlInterface;
+
+class ContactsActions extends \Magento\Ui\Component\Listing\Columns\Column
+{
+    protected $urlBuilder;
+
+    public function __construct(ContextInterface $context, UiComponentFactory $uiComponentFactory, UrlInterface $urlBuilder, array $components=[], array $data=[])
+    {
+        $this->urlBuilder = $urlBuilder;
+        parent::__construct($context, $uiComponentFactory, $components, $data);
+    }
+
+    public function prepareDataSource(array $dataSource)
+    {
+        if(isset($dataSource['data']['items'])) {
+            foreach($dataSource['data']['items'] as &$item)
+            {
+                $item[$this->getData('name')]['edit'] = [
+                    'href' => $this->urlBuilder->getUrl('post/index/edit', ['id' => $item['contact_id']]),
+                    'label' => __('Edit'),
+                    'hidden' => false
+                ];
+                $item[$this->getData('name')]['delete'] = [
+                    'href' => $this->urlBuilder->getUrl('post/index/delete', ['id' => $item['contact_id']]),
+                    'label' => __('Delete'),
+                    'hidden' => false
+                ];
+            }
+        }
+
+        return $dataSource;
+    }
+}
+
+Tiếp đến là file di.xml, nội dung file như sau:
+
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+    <preference for="Blog\Post\Api\ContactRepositoryInterface" type="Blog\Post\Model\ContactRepository"/>
+    <preference for="Blog\Post\Api\Data\ContactInterface" type="Blog\Post\Model\Contact"/>
+    <preference for="Blog\Post\Api\Data\ContactSearchResultsInterface" type="Magento\Framework\Api\SearchResults"/>
+    <virtualType name="ContactsGridDataProvider" type="Magento\Framework\View\Element\UiComponent\DataProvider\DataProvider">
+        <arguments>
+            <argument name="collection" xsi:type="object" shared="false">Blog\Post\Model\ResourceModel\Contact\Collection</argument>
+            <argument name="filterPool" xsi:type="object" shared="false">ContactsGridFilterPool</argument>
+        </arguments>
+    </virtualType>
+
+    <virtualType name="ContactsGridFilterPool" type="Magento\Framework\View\Element\UiComponent\DataProvider\FilterPool">
+        <arguments>
+            <argument name="appliers" xsi:type="array">
+                <item name="regular" xsi:type="object">Magento\Framework\View\Element\UiComponent\DataProvider\RegularFilter</item>
+                <item name="fulltext" xsi:type="object">Magento\Framework\View\Element\UiComponent\DataProvider\FulltextFilter</item>
+            </argument>
+        </arguments>
+    </virtualType>
+
+    <type name="Magento\Framework\View\Element\UiComponent\DataProvider\CollectionFactory">
+        <arguments>
+            <argument name="collections" xsi:type="array">
+                <item name="post_test_listing_data_source" xsi:type="string">Blog\Post\Model\ResourceModel\Contact\Grid\Collection</item>
+            </argument>
+        </arguments>
+    </type>
+
+    <virtualType name="Blog\Post\Model\ResourceModel\Contact\Grid\Collection" type="Magento\Framework\View\Element\UiComponent\DataProvider\SearchResult">
+        <arguments>
+            <argument name="mainTable" xsi:type="string">aht_blog_contact</argument>
+            <argument name="resourceModel" xsi:type="string">Blog\Post\Model\ResourceModel\Contact\Collection</argument>
+        </arguments>
+    </virtualType>
+</config>
+
+Tạo file Blog/Post/Api/Data/ContactSearchResultInterface.php
+
+<?php
+
+namespace Blog\Post\Api\Data;
+
+interface ContactSearchResultsInterface extends \Magento\Framework\Api\SearchResultsInterface
+{
+
+    /**
+     * Get Post list.
+     * @return \AHT\Blog\Api\Data\PostInterface[]
+     */
+    public function getItems();
+
+    /**
+     * Set name list.
+     * @param \AHT\Blog\Api\Data\PostInterface[] $items
+     * @return $this
+     */
+    public function setItems(array $items);
+}
+
+Cuối cùng tạo file Blog/Post/Model/Contact/DataProvider.php
+<?php
+namespace Blog\Post\Model\Contact;
+
+use Blog\Post\Model\ResourceModel\Contact\CollectionFactory;
+use Blog\Post\Model\Contact;
+
+class DataProvider extends \Magento\Ui\DataProvider\AbstractDataProvider
+{
+    protected $collection;
+    protected $_loadedData;
+
+    public function __construct(
+        $name,
+        $primaryFieldName,
+        $requestFieldName,
+        CollectionFactory $contactCollectionFactory,
+        array $meta = [],
+        array $data = []
+    ){
+        $this->collection = $contactCollectionFactory->create();
+        parent::__construct($name, $primaryFieldName, $requestFieldName, $meta, $data);
+    }
+
+    public function getData()
+    {
+        if(isset($this->_loadedData)) {
+            return $this->_loadedData;
+        }
+
+        $items = $this->collection->getItems();
+
+        foreach($items as $contact)
+        {
+            $this->_loadedData[$contact->getId()] = $contact->getData();
+        }
+
+        return $this->_loadedData;
+    }
+}
+
+Xong rồi, giờ thì chạy lần lượt các lệnh sau:
+
+Php bin/magento cache:clean
+
+Php bin/magento setup:di:compile
+
+Php bin/magento setup:upgrade
+
+Php bin/magento setup:static-content:deploy -f

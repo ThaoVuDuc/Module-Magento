@@ -1,0 +1,23 @@
+﻿Magento 2 được xây dựng quanh các model, resource model và resource collection.
+
+Models : chứa dữ liệu và hành vi
+
+Resource: model ánh xạ dữ liệu cho cấu trúc lưu trữ
+
+Collection: các bộ đóng gói của model và các chức năng liên quan như : lọc, sắp xếp, phân trang.
+
+Resource : bao gồm các kết nối cơ sở dữ liệu thông qua các bộ adapter.
+
+ 
+ORM cung cấp cho các bạn các chức năng để tạo mới, hiển thị, cập nhật, xóa dữ liệu trong cơ sở dữ liệu. Lớp Collection trong M2 implements cả hai interface IteratorAggregate và Countable PHP5 SPL. Nó được sử dụng để lưu trữ một tập hợp các model cụ thể.
+
+Khái niệm ORM Magento yêu cầu rằng, chỉ có Model được phép chứa dữ liệu và tương tác với dữ liệu. Bất cứ cái gì đại diện cho một bảng của cơ sở dữ liệu có thể coi là Model.
+
+Khi tạo mới một Model, nó cần phải biết được Resource Model nào được sử dụng. Đó là lý do tại sao tên của lớp Resource Model được chỉ định bằng phương thức _init() trong hàm protected _contruct(). Điều này là bắt buộc để hỗ trợ các phương thức getResource() và getCollection() được kế thừa từ lớp AbstractModel.
+
+Để tạo Model, bạn chỉ cần tạo một lớp kế thừa từ \Magento\Framework\Model\AbstractModel. Trong M2, bạn không cần phải khai báo Model, Resource Model, Adapters và nhiều thứ khác trong phần cấu hình.
+
+Một Resource Model kế thừa từ \Magento\Framework\Model\ResourceModel\Db\AbstractDb. Lớp PostResourceModel dùng phương thức _init() trong hàm protected _contruct() để xác định tên bảng và tên khóa chính của Resource Model để xác định nơi lưu trữ trạng thái của Model.
+
+Lớp Collection Magento\Framework\Model\ResourceModel\Db\Collection\AbstractCollection. Khi tạo Collection, cần xác định Model tương ứng để khởi tạo lớp thích hợp sau khi tải danh sách các bản ghi. Nó cũng cần biết Resource Model nào phù hợp để truy cập cơ sở dữ liệu. Đó là lý do tại sao tên của Model và Resource Model được chỉ định trong phương thức _init() của hàm protected _contruct()
+Model trong M2 không còn chứa CRUD, các phương thức load(), save(), delete() ủy nhiệm cho Resource Model. Model không có quyền truy cập trực tiếp vào cơ sở dữ liệu, chỉ có Resource Model làm được điều này, do đó phải tạo các phương thức thích hợp trên Resource Model.
