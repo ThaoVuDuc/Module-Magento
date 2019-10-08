@@ -1,0 +1,430 @@
+﻿Bước 1: Magento 2 Access Control List Rules
+Admin ACL trong M2 nằm trong System > Permissions > User Roles.
+Để tạo ACL, làm theo 2 bước sau:
+Tạo ACL rule
+Ta vẫn sẽ sử dụng Blog module để làm điều này. Tạo file acl.xml trong AHT/Blog/etc/acl.xml :
+
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:Acl/etc/acl.xsd">
+    <acl>
+        <resources>
+            <resource id="Magento_Backend::admin">
+                <resource id="AHT_Blog::blog" title="Blog" sortOrder="51">
+                    <resource id="AHT_Blog::post" title="Post" sortOrder="10"/>
+                    <resource id="AHT_Blog::blog_configuration" title="Configuration" sortOrder="99" />
+                </resource>
+                <resource id="Magento_Backend::stores">
+                    <resource id="Magento_Backend::stores_settings">
+                        <resource id="Magento_Config::config">
+                            <resource id="AHT_Blog::blog_config" title="Blog"/>
+                        </resource>
+                    </resource>
+                </resource>
+            </resource>
+        </resources>
+    </acl>
+</config>
+Resource sẽ được đặt trong Magento_Backend::admin, mỗi resource sẽ có một id, title, sortOrder.
+Id: thuộc tính xác định resource, có thể khai báo resource trong Admin menu.
+Title : label của resesource khi hiển thị trên resource tree
+sortOder : xác định vị trí resource trên tree
+clear cache và xem kết quả:
+
+Bước 2 Tạo Admin menu
+Đầu tiên, tạo file menu.xml:
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Backend:etc/menu.xsd">
+    <menu>
+      <add id="AHT_Blog::level1" 
+        title="AHT" 
+        translate="title" 
+        module="AHT_Blog" 
+        parent="Magento_Backend::content" 
+        sortOrder="50" 
+        dependsOnModule="AHT_Blog" 
+        resource="AHT_Blog::level1"/>
+      <add id="AHT_Blog::level2" 
+        title="Blog" 
+        translate="title" 
+        module="AHT_Blog" 
+        parent="AHT_Blog::level1" 
+        sortOrder="10" 
+        dependsOnModule="AHT_Blog" 
+        action="blog/index" 
+        resource="AHT_Blog::level1"/>
+                
+                <add id="AHT_Blog::blog" 
+        title="Blog" 
+        translate="title" 
+        module="AHT_Blog" 
+        sortOrder="51" 
+        dependsOnModule="AHT_Blog" 
+        resource="AHT_Blog::blog"/>
+        
+                <add id="AHT_Blog::post" 
+        title="Blog" 
+        translate="title" 
+        module="AHT_Blog" 
+        parent="AHT_Blog::blog" 
+        sortOrder="10" 
+        dependsOnModule="AHT_Blog" 
+        action="blog/post" 
+        resource="AHT_Blog::post"/>
+
+        <add id="AHT_Blog::blog_config" 
+        title="Configuration" 
+        translate="title" 
+        module="AHT_Blog" 
+        parent="AHT_Blog::blog" 
+        sortOrder="10" 
+        dependsOnModule="AHT_Blog" 
+        action="adminhtml/system_config/edit/section/blog" 
+        resource="AHT_Blog::blog_config"/>
+    </menu>
+</config>
+Trong ví dụ này, ta sẽ tạo một menu level 0 với tên Blog và 2 menu con là Blog và Configuration.
+
+Rồi, giờ clear cache và xem kết quả:
+Bước 3 tạo system.xml
+Trang configuration trong M2 được chia theo các phần: Tab, Section, Group, Fields như hình dưới:
+Tạo file system.xml AHT/Blog/etc/adminhtml
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Config:etc/system_file.xsd">
+    <system>
+        <tab id="aht" translate="label" sortOrder="10">
+            <label>AHT</label>
+        </tab>
+        <section id="blog" translate="label" sortOrder="130" showInDefault="1" showInWebsite="1" showInStore="1">
+            <class>separator-top</class>
+            <label>Blog</label>
+            <tab>aht</tab>
+            <resource>AHT_Blog::blog_config</resource>
+            <group id="general" translate="label" type="text" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>General Configuration</label>
+                <field id="enabled" translate="label" type="select" sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Enabled</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+                <field id="display_text" translate="label" type="text" sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Display Text</label>
+                    <comment>This text will display on the frontend.</comment>
+                </field>
+            </group>
+        </section>
+    </system>
+</config>
+Trong đoạn code trên bạn sẽ thấy cách tạo Tab, Section, Group và Field.
+
+Một Tab có thể có nhiều Section, một số thuộc tính chính:
+
+id : xác định Tab
+
+sortOrder: xác định vị trí Tab
+
+Translate: cho M2 biết title nào cần dịch
+
+Label : hiển thị như một tiêu đề của Tab
+
+Section có thể có nhiều Group
+
+Class : class của section
+
+Label : tiêu đề của section
+
+Tab : id của Tab , cho M2 biết Section thuộc tab nào
+
+Resoure : xác định quy tắc ACL mà admin phải có để truy cập configuration
+
+Group có thể có nhiều Field và các thuộc tính của nó thì giống của Section
+
+Fields : phần chính của Group, đối với Fields thì ta quan tâm đến thuộc tính type. Nó sẽ xác định cách mà Field hiển thị. Trong ví dụ trên, ta vừa tạo 2 Fields với type là text và select.
+
+Tiếp theo chúng ta sẽ set giá trị mặc định cho các fields. Khi mới được tạo thì fields không có bất cứ giá trị nào, nên khi được gọi thì nó sẽ trả về giá trị Null. Ta sẽ cần cài đặt giá trị mặc định cho fields, gọi nó tới config, set value và save nó. Giá trị mặc định này thì được lưu trữ trong file config.xml
+
+Vậy nên ta cần tạo file AHT/Blog/etc/config.xml
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Store:etc/config.xsd">
+    <default>
+        <blog>
+            <general>
+                <enabled>1</enabled>
+                <display_text>AHT Blog Module Text</display_text>
+            </general>
+        </blog>
+    </default>
+
+</config>
+Xóa cache và chúng ta có kết quả như sau:
+Để lấy được giá trị này từ configuration, tạo file AHT/Blog/Helper/Data.php
+<?php
+
+namespace AHT\Blog\Helper;
+
+use Magento\Framework\App\Helper\AbstractHelper;
+use Magento\Store\Model\ScopeInterface;
+
+class Data extends AbstractHelper
+{
+    public function getConfig($configPath, $storeId = null)
+    {
+        return $this->scopeConfig->getValue(
+            $configPath, ScopeInterface::SCOPE_STORE, $storeId
+        );
+    }
+}
+Sau đó là file phtml
+
+AHT\Blog\view\frontend\templates\index.phtml
+
+Giờ thì xóa cache và ta sẽ thu được kết quả
+
+Bước 4 tạo Admin Grid
+Giờ thì bắt tay vào tạo Grid thôi.
+
+Đầu tiên, tạo route, nhưng ta dùng lại module AHT_Blog trước nên không phải tạo lại nữa nhé.
+
+Tiếp nữa là tạo admin menu thì ta vừa tạo ở trên rồi, giờ chỉ cần link tới blog/post/index
+
+Sau đó, tạo controller Index.php
+
+AHT/Blog/Controller/Adminhtml/Post/Index.php
+
+<?php
+
+namespace AHT\Blog\Controller\Adminhtml\Post;
+
+class Index extends \AHT\Blog\Controller\Adminhtml\Post
+{
+
+    public function execute()
+    {
+        $this->_initAction();
+        $this->_view->getPage()->getConfig()->getTitle()->prepend(__('Posts'));
+        $this->_view->renderLayout();
+    }
+
+}
+Tạo file di.xml, file này dùng để khai báo resource, kết nối CSDL để lấy dữ liệu cho Grid.
+
+AHT/Blog/etc/di.xml
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../../../lib/internal/Magento/Framework/ObjectManager/etc/config.xsd">
+    <type name="AHT\Blog\Model\Post">
+        <arguments>
+            <argument name="resource" xsi:type="object">AHT\Blog\Model\ResourceModel\Post</argument>
+        </arguments>
+    </type>
+</config>
+
+Tiếp theo, tạo Block cho Grid
+AHT/Blog/Block/Adminhtml/Post.php
+
+<?php
+namespace AHT\Blog\Block\Adminhtml;
+
+class Post extends \Magento\Backend\Block\Widget\Grid\Container
+{
+
+	protected function _construct()
+	{
+		$this->_controller = 'adminhtml_post';
+		$this->_blockGroup = 'AHT_Blog';
+		$this->_headerText = __('Posts');
+		$this->_addButtonLabel = __('Create New Post');
+		parent::_construct();
+	}
+}
+Block sẽ kế thùa từ \Magento\Backend\Block\Widget\Grid và định nghĩa một số biến trong hàm _contruct()
+
+_blockGroup: tên module
+
+_controller đường dẫn tới Grid block
+
+_headerText title của page block
+
+_addbuttonLabel: label của button Add New Post
+
+Tiếp theo ta sẽ tạo file layout để kết nối với Grid Block
+
+AHT/Blog/view/adminhtml/layout/blog_post_index.xml
+
+<?xml version="1.0"?>
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <body>
+        <referenceContainer name="content">
+            <block class="AHT\Blog\Block\Adminhtml\Post" name="adminhtml.post.container">
+                <block class="Magento\Backend\Block\Widget\Grid" name="adminhtml.post.container.grid" as="grid">
+                    <arguments>
+                        <argument name="id" xsi:type="string">postGrid</argument>
+                        <argument name="dataSource" xsi:type="object">AHT\Blog\Model\ResourceModel\Post\Collection</argument>
+                        <argument name="default_sort" xsi:type="string">name</argument>
+                        <argument name="default_dir" xsi:type="string">ASC</argument>
+                        <argument name="save_parameters_in_session" xsi:type="boolean">true</argument>
+                        <argument name="use_ajax" xsi:type="boolean">false</argument>
+                        <argument name="grid_url" xsi:type="url" path="blog/post/index">
+                            <param name="_current">1</param>
+                        </argument>
+                    </arguments>
+                    <block class="Magento\Backend\Block\Widget\Grid\Massaction" name="adminhtml.post.grid.massaction" as="grid.massaction">
+                        <arguments>
+                            <argument name="massaction_id_field" xsi:type="string">post_id</argument>
+                            <argument name="form_field_name" xsi:type="string">ids</argument>
+                            <argument name="options" xsi:type="array">
+                                <item name="delete" xsi:type="array">
+                                    <item name="label" xsi:type="string" translate="true">Delete</item>
+                                    <item name="url" xsi:type="string">blog/post/massDelete</item>
+                                    <item name="confirm" xsi:type="string" translate="true">Are you sure you want to delete?</item>
+                                </item>
+                                <item name="change_status" xsi:type="array">
+                                    <item name="label" xsi:type="string" translate="true">Change Status</item>
+                                    <item name="url" xsi:type="string">blog/post/massStatus</item>
+                                    <item name="block_name" xsi:type="string">grid.status</item>
+                                </item>
+                            </argument>
+                        </arguments>
+                        <block class="Magento\Backend\Block\Widget\Grid\Massaction\Additional" name="adminhtml.post.grid.status" as="grid.status">
+                            <arguments>
+                                <argument name="fields" xsi:type="array">
+                                    <item name="visibility" xsi:type="array">
+                                        <item name="name" xsi:type="string">status</item>
+                                        <item name="type" xsi:type="string">select</item>
+                                        <item name="class" xsi:type="string">required-entry</item>
+                                        <item name="label" xsi:type="string" translate="true">Status</item>
+                                        <item name="values" xsi:type="array">
+                                            <item name="disable" xsi:type="array">
+                                                <item name="value" xsi:type="string">0</item>
+                                                <item name="label" xsi:type="string" translate="true">Disabled</item>
+                                            </item>
+                                            <item name="enable" xsi:type="array">
+                                                <item name="value" xsi:type="string">1</item>
+                                                <item name="label" xsi:type="string" translate="true">Enabled</item>
+                                            </item>
+                                        </item>
+                                    </item>
+                                </argument>
+                            </arguments>
+                        </block>
+                    </block>
+                    <block class="Magento\Backend\Block\Widget\Grid\ColumnSet" name="adminhtml.post.container.grid.columnSet" as="grid.columnSet">
+                        <arguments>
+                            <argument name="id" xsi:type="string">postGrid</argument>
+                            <argument name="rowUrl" xsi:type="array">
+                                <item name="path" xsi:type="string">*/*/edit</item>
+                                <item name="extraParamsTemplate" xsi:type="array">
+                                    <item name="id" xsi:type="string">getId</item>
+                                </item>
+                            </argument>
+                        </arguments>
+                        <block class="Magento\Backend\Block\Widget\Grid\Column" as="id">
+                            <arguments>
+                                <argument name="header" xsi:type="string" translate="true">ID</argument>
+                                <argument name="index" xsi:type="string">post_id</argument>
+                                <argument name="column_css_class" xsi:type="string">col-id</argument>
+                                <argument name="header_css_class" xsi:type="string">col-id</argument>
+                            </arguments>
+                        </block>
+                        <block class="Magento\Backend\Block\Widget\Grid\Column" as="name">
+                            <arguments>
+                                <argument name="header" xsi:type="string" translate="true">Name</argument>
+                                <argument name="index" xsi:type="string">name</argument>
+                            </arguments>
+                        </block>
+
+                        <block class="Magento\Backend\Block\Widget\Grid\Column" as="created_at">
+                            <arguments>
+                                <argument name="header" xsi:type="string" translate="true">Created</argument>
+                                <argument name="index" xsi:type="string">created_at</argument>
+                                <argument name="type" xsi:type="string">date</argument>
+                                <argument name="column_css_class" xsi:type="string">col-id</argument>
+                                <argument name="header_css_class" xsi:type="string">col-id</argument>
+                            </arguments>
+                        </block>
+                        <block class="Magento\Backend\Block\Widget\Grid\Column" as="updated_at">
+                            <arguments>
+                                <argument name="header" xsi:type="string" translate="true">Modified</argument>
+                                <argument name="index" xsi:type="string">updated_at</argument>
+                                <argument name="type" xsi:type="string">date</argument>
+                                <argument name="column_css_class" xsi:type="string">col-id</argument>
+                                <argument name="header_css_class" xsi:type="string">col-id</argument>
+                            </arguments>
+                        </block>
+
+                        <block class="Magento\Backend\Block\Widget\Grid\Column" as="status">
+                            <arguments>
+                                <argument name="header" xsi:type="string" translate="true">Status</argument>
+                                <argument name="index" xsi:type="string">status</argument>
+                                <argument name="type" xsi:type="string">options</argument>
+                                <argument name="options" xsi:type="array">
+                                    <item name="disable" xsi:type="array">
+                                        <item name="value" xsi:type="string">0</item>
+                                        <item name="label" xsi:type="string" translate="true">Disabled</item>
+                                    </item>
+                                    <item name="enable" xsi:type="array">
+                                        <item name="value" xsi:type="string">1</item>
+                                        <item name="label" xsi:type="string" translate="true">Enabled</item>
+                                    </item>
+                                </argument>
+                            </arguments>
+                        </block>
+
+                        <block class="Magento\Backend\Block\Widget\Grid\Column" as="action">
+                            <arguments>
+                                <argument name="id" xsi:type="string">action</argument>
+                                <argument name="header" xsi:type="string" translate="true">Action</argument>
+                                <argument name="type" xsi:type="string">action</argument>
+                                <argument name="getter" xsi:type="string">getId</argument>
+                                <argument name="filter" xsi:type="boolean">false</argument>
+                                <argument name="sortable" xsi:type="boolean">false</argument>
+                                <argument name="is_system" xsi:type="boolean">true</argument>
+                                <argument name="actions" xsi:type="array">
+                                    <item name="view_action" xsi:type="array">
+                                        <item name="caption" xsi:type="string" translate="true">Edit</item>
+                                        <item name="url" xsi:type="array">
+                                            <item name="base" xsi:type="string">blog/post/edit</item>
+                                        </item>
+                                        <item name="field" xsi:type="string">id</item>
+                                    </item>
+                                </argument>
+                                <argument name="header_css_class" xsi:type="string">col-actions</argument>
+                                <argument name="column_css_class" xsi:type="string">col-actions</argument>
+                            </arguments>
+                        </block>
+                    </block>
+                </block>
+            </block>
+        </referenceContainer>
+    </body>
+</page>
+Trong file layout, ta sẽ khai báo một số tham số cho Grid, tham số chính là dataSource, nó sẽ kết nối với dataSource trong file di.xml để kết nối tới CSDL
+
+Bước tiếp theo ta sẽ tạo abstract controller
+
+AHT/Blog/Controller/Adminhtml/Post.php
+
+
+<?php
+
+namespace AHT\Blog\Controller\Adminhtml;
+
+use Magento\Backend\App\Action;
+
+abstract class Post extends Action
+{
+    protected function _initAction()
+    {
+        $this->_view->loadLayout();
+        $this->_setActiveMenu(
+            'AHT_Blog::blog'
+        )->_addBreadcrumb(
+            __('Blog'),
+            __('Blog')
+        );
+        return $this;
+    }
+
+    protected function _isAllowed()
+    {
+        return $this->_authorization->isAllowed('AHT_Blog::blog');
+    }
+}
+Xong rồiiiiii , giờ thì xem kết quả và đừng quên xóa cache nhé:
+
