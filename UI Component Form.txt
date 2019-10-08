@@ -1,0 +1,433 @@
+﻿UI Component Form
+Ở bài trước ta đã tạo List sử dụng UI Component để hiện thị list contact rồi. Bài này ta sẽ tiếp tục sử dụng Ui Component để tạo Form cho action Edit và Create.
+
+Đầu tiên, tạo file action NewAction.php
+<?php
+namespace Blog\Post\Controller\Adminhtml\Index;
+
+class NewAction extends \Magento\Backend\App\Action
+{
+
+    const ADMIN_RESOURCE = 'Index';
+
+    protected $resultPageFactory;
+
+    public function __construct(
+        \Magento\Backend\App\Action\Context $context,
+        \Magento\Framework\View\Result\PageFactory $resultPageFactory)
+    {
+        $this->resultPageFactory = $resultPageFactory;
+        parent::__construct($context);
+    }
+
+    public function execute()
+    {
+        return $this->resultPageFactory->create();
+    }
+}
+Sau khi tạo action thì luôn là đến bước tạo layout, tạo layout post_index_newaction.xml
+<?xml version="1.0"?>
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <update handle="post_index_edit" />
+</page>
+
+Ở trên ta vừa update handle file layout của action Edit, nên phải tạo file post_index_edit.xml nữa:
+
+<?xml version="1.0"?>
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <update handle="styles" />
+    <update handle="editor" />
+    <body>
+        <referenceContainer name="content">
+            <uiComponent name="post_form" />
+        </referenceContainer>
+    </body>
+</page>
+Ta đã khai báo file edit uiComponent nên giờ sẽ phải tạo nó.
+
+Trong thư mục Blog/Post/view/ui_component tạo file post_form.xml
+<?xml version="1.0" encoding="UTF-8"?>
+<form xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Ui:etc/ui_configuration.xsd">
+    <argument name="data" xsi:type="array">
+        <item name="js_config" xsi:type="array">
+            <item name="provider" xsi:type="string">post_form.post_form_data_source</item>
+            <item name="deps" xsi:type="string">post_form.post_form_data_source</item>
+        </item>
+
+        <item name="label" xsi:type="string" translate="true">Contact Form</item>
+        <!--
+        <item name="layout" xsi:type="array">
+            <item name="type" xsi:type="string">tabs</item>
+        </item>
+        -->
+        <item name="config" xsi:type="array">
+            <item name="dataScope" xsi:type="string">data</item>
+            <item name="namespace" xsi:type="string">contact_form</item>
+        </item>
+
+        <item name="template" xsi:type="string">templates/form/collapsible</item>
+
+        <item name="buttons" xsi:type="array">
+            <item name="back" xsi:type="string">Blog\Post\Block\Adminhtml\Contact\Edit\BackButton</item>
+            <item name="delete" xsi:type="string">Blog\Post\Block\Adminhtml\Contact\Edit\DeleteButton</item>
+            <item name="reset" xsi:type="string">Blog\Post\Block\Adminhtml\Contact\Edit\ResetButton</item>
+            <item name="save" xsi:type="string">Blog\Post\Block\Adminhtml\Contact\Edit\SaveButton</item>
+        </item>
+    </argument>
+
+    <dataSource name="post_form_data_source">
+        <argument name="dataProvider" xsi:type="configurableObject">
+            <argument name="class" xsi:type="string">Blog\Post\Model\Contact\DataProvider</argument>
+            <argument name="name" xsi:type="string">post_form_data_source</argument>
+            <argument name="primaryFieldName" xsi:type="string">contact_id</argument>
+            <argument name="requestFieldName" xsi:type="string">id</argument>
+            <argument name="data" xsi:type="array">
+                <item name="config" xsi:type="array">
+                    <item name="submit_url" xsi:type="url" path="post/index/save" />
+                </item>
+            </argument>
+        </argument>
+        <argument name="data" xsi:type="array">
+            <item name="js_config" xsi:type="array">
+                <item name="component" xsi:type="string">Magento_Ui/js/form/provider</item>
+            </item>
+        </argument>
+    </dataSource>
+
+    <fieldset name="contact">
+        <argument name="data" xsi:type="array">
+            <item name="config" xsi:type="array">
+                <item name="collapsible" xsi:type="boolean">false</item>
+                <item name="label" xsi:type="string" translate="true">Contact Fieldset</item>
+            </item>
+        </argument>
+
+        <field name="contact_id">
+            <argument name="data" xsi:type="array">
+                <item name="config" xsi:type="array">
+                    <item name="visible" xsi:type="boolean">false</item>
+                    <item name="dataType" xsi:type="string">text</item>
+                    <item name="formElement" xsi:type="string">input</item>
+                    <item name="source" xsi:type="string">contact</item>
+                </item>
+            </argument>
+        </field>
+
+        <field name="name">
+            <argument name="data" xsi:type="array">
+                <item name="config" xsi:type="array">
+                    <item name="label" xsi:type="string">Name</item>
+                    <item name="visible" xsi:type="boolean">true</item>
+                    <item name="dataType" xsi:type="string">text</item>
+                    <item name="formElement" xsi:type="string">input</item>
+                    <item name="source" xsi:type="string">contact</item>
+                </item>
+            </argument>
+        </field>
+
+        <field name="email">
+            <argument name="data" xsi:type="array">
+                <item name="config" xsi:type="array">
+                    <item name="label" xsi:type="string">Email</item>
+                    <item name="visible" xsi:type="boolean">true</item>
+                    <item name="dataType" xsi:type="string">text</item>
+                    <item name="formElement" xsi:type="string">input</item>
+                    <item name="source" xsi:type="string">contact</item>
+                </item>
+            </argument>
+        </field>
+
+        <field name="comment">
+            <argument name="data" xsi:type="array">
+                <item name="config" xsi:type="array">
+                    <item name="label" xsi:type="string">Comment</item>
+                    <item name="visible" xsi:type="boolean">true</item>
+                    <item name="dataType" xsi:type="string">text</item>
+                    <item name="formElement" xsi:type="string">input</item>
+                    <item name="source" xsi:type="string">contact</item>
+                </item>
+            </argument>
+        </field>
+    </fieldset>
+</form>
+
+Trong form đã tạo 4 button block : Back, Delete, Reset, Save
+
+Giờ cần phải tạo các Block xử lý các button này.
+
+Đầu tiên ta tạo file GenericButton.php
+<?php
+namespace Blog\Post\Block\Adminhtml\Contact\Edit;
+use Magento\Search\Controller\RegistryConstants;
+class GenericButton
+{
+    protected $urlBuilder;
+    protected $registry;
+    public function __construct(
+       \Magento\Backend\Block\Widget\Context $context,
+       \Magento\Framework\Registry $registry
+    )
+    {
+        $this->urlBuilder = $context->getUrlBuilder();
+        $this->registry = $registry;
+    }
+    public function getId()
+    {
+        $contact = $this->registry->registry('contact');
+        return $contact ? $contact->getId() : null;
+    }
+    public function getUrl($route = '', $params = [])
+    {
+        return $this->urlBuilder->getUrl($route, $params);
+    }
+}
+4 block cần tạo tiếp theo sẽ kế thừa từ GenericButton.php
+
+BackButton.php :
+
+<?php
+namespace Blog\Post\Block\Adminhtml\Contact\Edit;
+
+use Magento\Framework\View\Element\UiComponent\Control\ButtonProviderInterface;
+
+class BackButton extends GenericButton implements ButtonProviderInterface
+{
+    public function getButtonData()
+    {
+        return [
+            'label' => __('Back'),
+            'on_click' => sprintf("location.href= '%s';", $this->getBackUrl()),
+            'class' => 'back',
+            'sort_order' => 10
+        ];
+    }
+
+    public function getBackUrl()
+    {
+        return $this->getUrl('*/*/');
+    }
+}
+DeleteButton.php :
+<?php
+namespace Blog\Post\Block\Adminhtml\Contact\Edit;
+
+use Magento\Framework\View\Element\UiComponent\Control\ButtonProviderInterface;
+
+class DeleteButton extends GenericButton implements ButtonProviderInterface
+{
+    public function getButtonData()
+    {
+        return [
+            'label' => __('Delete Contact'),
+            'on_click' => 'deleteConfirm(\'' . __('Are you sure you want to delete this contact ?') . '\', \'' . $this->getDeleteUrl() . '\')',
+            'class' => 'delete',
+            'sort_order' => 20
+        ];
+    }
+
+    public function getDeleteUrl()
+    {
+        $urlInterface = \Magento\Framework\App\ObjectManager::getInstance()->get('Magento\Framework\UrlInterface');
+        $url = $urlInterface->getCurrentUrl();
+
+        $parts = explode('/', parse_url($url, PHP_URL_PATH));
+
+        $id = $parts[6];
+
+        return $this->getUrl('*/*/delete', ['id' => $id]);
+    }
+}
+
+ResetButton.php:
+
+<?php
+namespace Blog\Post\Block\Adminhtml\Contact\Edit;
+
+use Magento\Framework\View\Element\UiComponent\Control\ButtonProviderInterface;
+
+class ResetButton extends GenericButton  implements ButtonProviderInterface
+{
+    public function getButtonData()
+    {
+        return [
+            'label' => __('Reset'),
+            'on_click' => 'javascript: location.reload();',
+            'class' => 'reset',
+            'sort_order' => 30
+        ];
+    }
+}
+
+SaveButton.php :
+<?php
+namespace Blog\Post\Block\Adminhtml\Contact\Edit;
+
+use Magento\Framework\View\Element\UiComponent\Control\ButtonProviderInterface;
+
+class SaveButton extends GenericButton implements ButtonProviderInterface
+{
+    public function getButtonData()
+    {
+        return [
+            'label' => __('Save Contact'),
+            'class' => 'save primary',
+            'data_attribute' => [
+                'mage-init' => ['button' => ['event' => 'save']],
+                'form-role' => 'save',
+            ],
+            //'on_click' => sprintf("location.href= '%s';", $this->getSaveUrl()),
+            'sort_order' => 90
+        ];
+    }
+
+    public function getSaveUrl()
+    {
+        return $this->getUrl('*/*/save', []) ;
+    }
+}
+
+Rồi, bước cuối cùng là tạo nốt các action Edit, Save, Delete
+
+Action Edit
+
+<?php
+namespace Blog\Post\Controller\Adminhtml\Index;
+
+class Edit extends \Magento\Backend\App\Action
+{
+
+    const ADMIN_RESOURCE = 'Index';
+
+    protected $resultPageFactory;
+
+    public function __construct(
+        \Magento\Backend\App\Action\Context $context,
+        \Magento\Framework\View\Result\PageFactory $resultPageFactory)
+    {
+        $this->resultPageFactory = $resultPageFactory;
+        parent::__construct($context);
+    }
+
+    public function execute()
+    {
+        return $this->resultPageFactory->create();
+    }
+}
+Action Save :
+<?php
+namespace Blog\Post\Controller\Adminhtml\Index;
+
+class Save extends \Magento\Backend\App\Action
+{
+    const ADMIN_RESOURCE = 'Index';
+
+    protected $resultPageFactory;
+    protected $contactFactory;
+
+    public function __construct(
+        \Magento\Backend\App\Action\Context $context,
+        \Magento\Framework\View\Result\PageFactory $resultPageFactory,
+        \Blog\Post\Model\ContactFactory $contactFactory
+    )
+    {
+        $this->resultPageFactory = $resultPageFactory;
+        $this->contactFactory = $contactFactory;
+        parent::__construct($context);
+    }
+
+    public function execute()
+    {
+        $resultRedirect = $this->resultRedirectFactory->create();
+        $data = $this->getRequest()->getPostValue();
+
+        if($data)
+        {
+            try{
+                $id = $data['contact_id'];
+
+                $contact = $this->contactFactory->create()->load($id);
+
+                $data = array_filter($data, function($value) {return $value !== ''; });
+
+                $contact->setData($data);
+                $contact->save();
+                $this->messageManager->addSuccess(__('Successfully saved the item.'));
+                $this->_objectManager->get('Magento\Backend\Model\Session')->setFormData(false);
+                return $resultRedirect->setPath('*/*/');
+            }
+            catch(\Exception $d)
+            {
+                $this->messageManager->addError($e->getMessage());
+                $this->_objectManager->get('Magento\Backend\Model\Session')->setFormData($data);
+                return $resultRedirect->setPath('*/*/edit', ['id' => $contact->getId()]);
+            }
+        }
+
+         return $resultRedirect->setPath('*/*/');
+    }
+}
+
+Action Delete :
+
+<?php
+namespace Blog\Post\Controller\Adminhtml\Index;
+
+use Blog\Post\Model\Contact as Contact;
+
+
+class Delete extends \Magento\Backend\App\Action
+{
+
+    const ADMIN_RESOURCE = 'Index';
+
+    protected $resultPageFactory;
+    protected $contactFactory;
+
+    public function __construct(
+        \Magento\Backend\App\Action\Context $context,
+        \Magento\Framework\View\Result\PageFactory $resultPageFactory,
+        \Blog\Post\Model\ContactFactory $contactFactory
+    )
+    {
+        $this->resultPageFactory = $resultPageFactory;
+        $this->contactFactory = $contactFactory;
+        parent::__construct($context);
+    }
+
+    public function execute()
+    {
+        $id = $this->getRequest()->getParam('id');
+
+        $contact = $this->contactFactory->create()->load($id);
+
+        if(!$contact)
+        {
+            $this->messageManager->addError(__('Unable to process. please, try again.'));
+            $resultRedirect = $this->resultRedirectFactory->create();
+            return $resultRedirect->setPath('*/*/', array('_current' => true));
+        }
+
+        try{
+            $contact->delete();
+            $this->messageManager->addSuccess(__('Your contact has been deleted !'));
+        }
+        catch(\Exception $e)
+        {
+            $this->messageManager->addError(__('Error while trying to delete contact'));
+            $resultRedirect = $this->resultRedirectFactory->create();
+            return $resultRedirect->setPath('*/*/index', array('_current' => true));
+        }
+
+        $resultRedirect = $this->resultRedirectFactory->create();
+        return $resultRedirect->setPath('*/*/index', array('_current' => true));
+    }
+}
+
+Xong rồi, giờ chạy lần lượt các lệnh sau và xem kết quả nhé
+
+Bin/magento setup:di:compile
+
+Bin/magento setup:upgrade
+
+Bin/magento setup:static-content:deploy -f
+

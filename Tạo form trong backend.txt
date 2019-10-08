@@ -1,0 +1,413 @@
+﻿Tạo form trong backend
+trong bài tạo list trong backend ta đã tạo Grid để hiển thị danh sách các post rồi, bài này ta sẽ tìm hiểu cách tạo form edit và create post.
+
+Bước 1: tạo NewAction controller
+<?php
+
+namespace AHT\Blog\Controller\Adminhtml\Post;
+
+class NewAction extends \AHT\Blog\Controller\Adminhtml\Post
+{
+    public function execute()
+    {
+        $this->_forward('edit');
+    }
+}
+
+Bước 2: tạo Edit controller
+<?php
+
+namespace AHT\Blog\Controller\Adminhtml\Post;
+
+class Edit extends \AHT\Blog\Controller\Adminhtml\Post
+{
+    protected $_coreRegistry = null;
+    protected $_postRepository;
+    protected $_postFactory;
+    protected $_sessionFactory;
+
+    public function __construct(\Magento\Backend\App\Action\Context $context, 
+    \Magento\Framework\Registry $coreRegistry, 
+    \AHT\Blog\Model\PostRepository $postRepository, 
+    \AHT\Blog\Model\PostFactory $postFactory, 
+    \Magento\Backend\Model\Session $sessionFactory)
+    {
+        $this->_coreRegistry = $coreRegistry;
+        $this->_postRepository = $postRepository;
+        $this->_postFactory = $postFactory;
+        $this->_sessionFactory = $sessionFactory;
+        parent::__construct($context);
+    }
+
+    public function execute()
+    {
+        $id = $this->getRequest()->getParam('id');
+        $model = $this->_postFactory->create();
+
+        if ($id) {
+            $model->load($id);
+            if (!$model->getId()) {
+                $this->messageManager->addError(__('This item no longer exists.'));
+                $this->_redirect('blog/*/');
+                return;
+            }
+        }
+
+        $data = $this->_sessionFactory->getFormData(true);
+        if (!empty($data)) {
+            $model->setData($data);
+        }
+
+        $this->_coreRegistry->register('blog_post', $model);
+
+        $this->_initAction()->_addBreadcrumb(
+            $id ? __('Edit %1', $model->getName()) : __('New Item'),
+            $id ? __('Edit %1', $model->getName()) : __('New Item')
+        )->_addContent(
+            $this->_view->getLayout()->createBlock('AHT\Blog\Block\Adminhtml\Edit')
+        );
+        $this->_view->getPage()->getConfig()->getTitle()->prepend(__('Posts'));
+        $this->_view->getPage()->getConfig()->getTitle()->prepend(
+            $model->getId() ? $model->getName() : __('New Item')
+        );
+        $this->_view->renderLayout();
+    }
+}
+
+Bước 3: tạo Edit Block
+
+<?php
+
+namespace AHT\Blog\Block\Adminhtml;
+
+class Edit extends \Magento\Backend\Block\Widget\Form\Container
+{
+    protected $_coreRegistry = null;
+
+    public function __construct(
+        \Magento\Backend\Block\Widget\Context $context,
+        \Magento\Framework\Registry $registry,
+        array $data = []
+    )
+    {
+        $this->_coreRegistry = $registry;
+        parent::__construct($context, $data);
+    }
+
+    protected function _construct()
+    {
+        $this->_objectId = 'id';
+        $this->_controller = 'adminhtml';
+        $this->_blockGroup = 'AHT_Blog';
+
+        parent::_construct();
+
+        $this->buttonList->add(
+            'saveandcontinue',
+            [
+                'label' => __('Save and Continue Edit'),
+                'class' => 'save',
+                'data_attribute' => [
+                    'mage-init' => ['button' => ['event' => 'saveAndContinueEdit', 'target' => '#edit_form']],
+                ]
+            ],
+            -100
+        );
+    }
+
+    public function getHeaderText()
+    {
+        if ($this->_coreRegistry->registry('blog_post')->getId()) {
+            return __('Edit %1', $this->_coreRegistry->registry('blog_post')->getName());
+        } else {
+            return __('New Item');
+        }
+    }
+
+    protected function _isAllowedAction($resourceId)
+    {
+        return $this->_authorization->isAllowed($resourceId);
+    }
+}
+Bước 4: tạo Edit Form
+
+AHT/Blog/Block/Adminhtml/Edit/Form.php
+<?php
+
+namespace AHT\Blog\Block\Adminhtml\Edit;
+
+class Form extends \Magento\Backend\Block\Widget\Form\Generic
+{
+    protected $_wysiwygConfig;
+    protected $_systemStore;
+
+    public function __construct(
+        \Magento\Backend\Block\Template\Context $context,
+        \Magento\Framework\Registry $registry,
+        \Magento\Framework\Data\FormFactory $formFactory,
+        \Magento\Cms\Model\Wysiwyg\Config $wysiwygConfig,
+        \Magento\Store\Model\System\Store $systemStore,
+        array $data = []
+    )
+    {
+        $this->_wysiwygConfig = $wysiwygConfig;
+        $this->_systemStore = $systemStore;
+        parent::__construct($context, $registry, $formFactory, $data);
+    }
+
+    protected function _construct()
+    {
+        parent::_construct();
+        $this->setId('post__form');
+        $this->setTitle(__('Information'));
+    }
+
+    protected function _prepareForm()
+    {
+        $model = $this->_coreRegistry->registry('blog_post');
+
+        $form = $this->_formFactory->create(
+            ['data' => ['id' => 'edit_form', 'action' => $this->getData('action'), 'method' => 'post', 'enctype' => 'multipart/form-data']]
+        );
+
+        $fieldset = $form->addFieldset('add_post_form', ['legend' => __('Post')]);
+
+        if ($model->getId()) {
+            $fieldset->addField('post_id', 'hidden', ['name' => 'post_id']);
+        }
+
+        $fieldset->addField(
+            'name',
+            'text',
+            [
+                'label' => __('Name'),
+                'name' => 'name',
+                'required' => true,
+                'value' => $model->getName()
+            ]
+        );
+
+        $fieldset->addField(
+            'url_key',
+            'text',
+            [
+                'label' => __('Url Key'),
+                'name' => 'url_key',
+                'required' => true,
+                'value' => $model->getUrlKey()
+            ]
+        );
+
+        $fieldset->addField(
+            'image',
+            'image',
+            [
+                'label' => __('Image'),
+                'name' => 'image',
+                'required' => true,
+                'value' => $model->getImage()
+            ]
+        );
+
+        $wysiwygConfig = $this->_wysiwygConfig->getConfig();
+        $fieldset->addField(
+            'content',
+            'editor',
+            ['name' => 'content', 'label' => __('Content'), 'title' => __('Content'), 'required' => true, 'config' => $wysiwygConfig]
+        );
+
+        $fieldset->addField(
+            'status',
+            'select',
+            [
+                'label' => __('Status'),
+                'name' => 'status',
+                'required' => false,
+                'options' => ['1' => __('Enabled'), '0' => __('Disabled')]
+            ]
+        );
+
+        $form->setValues($model->getData());
+        $form->setUseContainer(true);
+        $this->setForm($form);
+
+        return parent::_prepareForm();
+    }
+}
+Xong việc tạo form rồiiiii!!!!! Kết quả thu được như sau:
+Giờ thì tạo nốt các chức năng để hoàn thiện module nhé
+
+Tạo Save controller
+<?php
+
+namespace AHT\Blog\Controller\Adminhtml\Post;
+
+use Magento\Framework\App\Filesystem\DirectoryList;
+
+class Save extends \AHT\Blog\Controller\Adminhtml\Post
+{
+    protected $_postFactory;
+    protected $_sessionFactory;
+    protected $_filesystemFactory;
+    protected $_cache;
+
+    public function __construct(\Magento\Backend\App\Action\Context $context, 
+    \Magento\Framework\Registry $coreRegistry, 
+    \AHT\Blog\Model\PostRepository $postRepository, 
+    \AHT\Blog\Model\PostFactory $postFactory, 
+    \Magento\Backend\Model\Session $sessionFactory, 
+    \Magento\Framework\Filesystem $filesystemFactory,
+    \Magento\PageCache\Model\Cache\Type $cache)
+    {
+        $this->_coreRegistry = $coreRegistry;
+        $this->_postRepository = $postRepository;
+        $this->_postFactory = $postFactory;
+        $this->_sessionFactory = $sessionFactory;
+        $this->_filesystemFactory = $filesystemFactory;
+        $this->_cache = $cache;
+        parent::__construct($context);
+    }
+    public function execute()
+    {
+        $resultRedirect = $this->resultRedirectFactory->create();
+        $data = $this->getRequest()->getPostValue();
+        if ($data) {
+            $id = $this->getRequest()->getParam('post_id');
+            $model = $this->_postFactory->create()->load($id);
+            if (!$model->getId() && $id) {
+                $this->messageManager->addError(__('This item no longer exists.'));
+                return $resultRedirect->setPath('*/*/');
+            }
+            if (isset($_FILES['image']['name']) && $_FILES['image']['name'] != '') {
+                $uploader = $this->_objectManager->create(
+                    'Magento\MediaStorage\Model\File\Uploader',
+                    ['fileId' => 'image']
+                );
+                $uploader->setAllowedExtensions(['jpg', 'jpeg', 'gif', 'png', 'svg', 'JPG', 'JPEG', 'GIF', 'PNG', 'SVG']);
+                $uploader->setAllowRenameFiles(true);
+                $uploader->setAllowCreateFolders(true);
+                $uploader->setFilesDispersion(true);
+                $ext = pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION);
+                if ($uploader->checkAllowedExtension($ext)) {
+                    $path = $this->_filesystemFactory->getDirectoryRead(DirectoryList::MEDIA)
+                        ->getAbsolutePath('blog/images/');
+                    $uploader->save($path);
+                    $fileName = $uploader->getUploadedFileName();
+                    if ($fileName) {
+                        $data['image'] = 'blog/images' . $fileName;
+                    }
+                } else {
+                    $this->messageManager->addError(__('Disallowed file type.'));
+                    return $this->redirectToEdit($model, $data);
+                }
+            } else {
+                if (isset($data['image']['delete']) && $data['image']['delete'] == 1) {
+                    $data['image'] = '';
+                } else {
+                    unset($data['image']);
+                }
+            }
+            $model->setData($data);
+            try {
+                $this->_postRepository->save($model);
+                $this->messageManager->addSuccess(__('You saved the item.'));
+                $this->_sessionFactory->setFormData(false);
+                if ($this->getRequest()->getParam('back')) {
+                    return $resultRedirect->setPath('*/*/edit', ['post_id' => $model->getId()]);
+                }
+                return $resultRedirect->setPath('*/*/');
+            } catch (\Exception $e) {
+                $this->messageManager->addError($e->getMessage());
+                $this->_sessionFactory->setFormData($data);
+                return $resultRedirect->setPath('*/*/edit', ['post_id' => $this->getRequest()->getParam('post_id')]);
+            }
+        }
+        return $this->cache->clean(\Zend_Cache::CLEANING_MODE_ALL, array('config','layout','block_html','collections','reflection','db_ddl','compiled_config','eav','config_integration','config_integration_api','full_page','translate','config_webservice','vertex'));
+        return $resultRedirect->setPath('*/*/');
+    }
+}
+Tạo massDelete controller
+<?php
+
+namespace AHT\Blog\Controller\Adminhtml\Post;
+
+class massDelete extends \AHT\Blog\Controller\Adminhtml\Post
+{
+    protected $_postFactory;
+
+    public function __construct(\Magento\Backend\App\Action\Context $context, 
+    \Magento\Framework\Registry $coreRegistry, 
+    \AHT\Blog\Model\PostRepository $postRepository, 
+    \AHT\Blog\Model\PostFactory $postFactory)
+    {
+        $this->_coreRegistry = $coreRegistry;
+        $this->_postRepository = $postRepository;
+        $this->_postFactory = $postFactory;
+        parent::__construct($context);
+    }
+    public function execute()
+    {
+        $resultRedirect = $this->resultRedirectFactory->create();
+        $ids = $this->getRequest()->getPost('ids');
+        if (!is_array($ids)) {
+            $this->messageManager->addError(__('Please select item(s).'));
+        } else {
+            try {
+                foreach ($ids as $id) {
+                    $model = $this->_postFactory->create()
+                        ->load($id)
+                        ->delete();
+                }
+                $this->messageManager->addSuccess(__('Total of %1 record(s) were successfully deleted.', count($ids)));
+
+            } catch (\Exception $e) {
+                $this->messageManager->addError($e->getMessage());
+            }
+        }
+        return $resultRedirect->setPath('*/*/');
+    }
+}
+Tạo massStatus controller :
+
+<?php
+
+namespace AHT\Blog\Controller\Adminhtml\Post;
+
+class MassStatus extends \AHT\Blog\Controller\Adminhtml\Post
+{
+    protected $_postFactory;
+
+    public function __construct(\Magento\Backend\App\Action\Context $context, 
+    \Magento\Framework\Registry $coreRegistry, 
+    \AHT\Blog\Model\PostRepository $postRepository, 
+    \AHT\Blog\Model\PostFactory $postFactory)
+    {
+        $this->_coreRegistry = $coreRegistry;
+        $this->_postRepository = $postRepository;
+        $this->_postFactory = $postFactory;
+        parent::__construct($context);
+    }
+    public function execute()
+    {
+        $resultRedirect = $this->resultRedirectFactory->create();
+        $ids = $this->getRequest()->getPost('ids');
+        if (!is_array($ids)) {
+            $this->messageManager->addError(__('Please select item(s).'));
+        } else {
+            try {
+                foreach ($ids as $id) {
+                    $model = $this->_postFactory->create()
+                        ->load($id)
+                        ->setStatus($this->getRequest()->getPost('status'))
+                        ->save();
+                }
+                $this->messageManager->addSuccess(__('Total of %1 record(s) were successfully updated.', count($ids)));
+
+            } catch (\Exception $e) {
+                $this->messageManager->addError($e->getMessage());
+            }
+        }
+        return $resultRedirect->setPath('*/*/');
+    }
+}
+Giờ xóa cache và tự kiểm tra kết quả nhé,,,,,,,
