@@ -1,0 +1,89 @@
+﻿Những file style chính được sử dụng :
+- print.less : sử dụng cho phiên bản in (không quan trọng lắm)
+- style-m.less : được sử dụng cho mobile và desktop
+- style-l-less : chỉ được sử dụng cho desktop version
+- /source : folder này chứa những file less cấu hình của theme
+- /source/_theme.less : ghi đè giá trị của những biến mặc định của Magento Ui (không nên sử dụng vì sẽ ảnh hưởng đến module mặc định cũng như theme mặc định)
+* Include css
+- Kế thừa default_head_blocks.xml từ theme cha (luma hoặc blank) bằng cách tạo 1 file trong theme con
+<theme_dir>/Magento_Theme/layout/default_head_blocks.xml
+- Đặt <css src="<path>/<file>" media="print|<option>" /> trong thẻ <head> tag
+vd : <css src="css/style-l.less" media="screen and (min-width:768px)" /> (màn hình máy tính)
+- Gọi css bên ngoài vào site : <css src="URL to External Source" src_type="url" rel="stylesheet" type="text/css"  />
+vd : <css src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap-theme.min.css" src_type="url" rel="stylesheet" type="text/css" />
+(lưu ý : src_type, rel và type bắt buộc có)
+* file style-l.less :
+- file style-l.less không có code thuần của less nó chỉ dùng để import các thư viện, các dữ liệu cần thiết
+- để import 1 file css và thì dùng @import 'file_name'
+//@magento_import 'path_file'; không phải là coment , là một kiểu import khác của magento,nó cũng sẽ chuyển thành import nhưng là tìm toàn bộ trong module có đường dẫn giống như thế rồi sau đó chuyển thành dạng @import để import file vào, còn @import chỉ tìm đúng file có cùng phân cấp hoặc ở trong thư mục đó(file tìm thấy sẽ theo thứ tự của module trong file config, module nào đứng tước thì nó gọi trước còn module nào đứng sau gọi sau)
+- @media-target : 'desktop chỉ sử dụng cho desktop'
+- @import 'source/_theme.less' file _theme.less dùng để override các biến toàn cục,nếu muốn thay đổi thì override file source/_theme.less
+* file style-m.less giống file style-l.less chỉ thêm file _reset.less dùng cho cả mobile và cả desktop.
+* Magento UI library : nơi chứa của library là li/web/css/source/lib 
+- là nơi chứa toàn bộ thư viện của magento
+- Tất cả những file có '_' đứng trước sẽ thể hiện chúng dùng để import tới file chung, chỉ có file style-l.less và file style-m.less mới dùng để compile ra css và sử dụng trên trình duyệt
+- li/web/css/source/lib chứa thư viện mixins để sử dụng
+ - li/web/css/source/lib/variables chứa các biến toàn cục có thể sử dụng ở toàn site, còn các biến có dấu _ ở trước thì chỉ dùng ở trong cục bộ
+- Extend là khi đã hài lòng về kết quả thì extend
+<theme_dir>/web/css/source/_extends.less
+kế thừa style của các thành phần đặt theo đường dẫn
+<theme_dir>/web/css/source/thanh_phan_extend.less
+vd : <theme_dir>/web/css/source/_buttons_extend.less, style trong file này sẽ thêm vào style mặc định của buttons.less file
+- @import _buttons_extend.less  file vào trong _extend.less
+- override là khi muốn thay đổi các thuộc tính của thành phần nào đó thì tạo file _theme.less trong <theme_dir>/web/css/source/_theme.less
+- có thể override style mặc định của thành phần theo cấu trúc : <theme_dir>/web/css/source/_thanhphan.less
+vd <theme_dir>/web/css/source/_button.less
+- lưu ý : hạn chế thay đổi thuộc tinh trong thành phần cha
+- những quy tắc và biến được khai báo hoặc kế thừa trong _extend.less luôn luôn được ưu tiên hơn trong _theme.less
+- extend luôn được khuyến khích hơn là override
+* file _module.less 
+- dùng để override style của module
+- nếu khai báo một file css riêng trong web/css rồi khai báo vào trong defaut_head_block.xml thì sẽ thêm yêu cầu cho server làm site chậm hơn, không đúng với cấu trúc magento lúc đấy trình duyệt sẽ gọi riêng file đó chứ không gọi chung trong file style-l, style-m.
+- Nên đặt style của module trong : 
+<module_name>/view/frontend/web/css/source/_module.less file này sẽ override toàn bộ, sẽ không nhận style cũ, không cần khai báo nữa, nó sẽ tự động được gọi trong style-m, style-l
+*&  when(@media-common = true){}
+viết css dùng chung cho cả desktop và moblie nên chỉ ghi vào file style-m.less nếu không đặt style vào bất kỳ điều kiện nào, nó sẽ được sinh ra trong cả 2 file style-m và style-l
+* breakpoint 
+có 6 breakpoint có sẵn để sử dụng trong lib/web/css/source/lib/variable/_responsive.less
+- cách để đặt điều kiện cho màn hình
+.media-width(@extremum, @break) when (@extremum='max') and (@break = @screen_s){//your code}(@break là màn hình, extemum là để so sánh với màn hình, ở đây là các phần tử trong màn hình nhỏ hơn 640px)
+.media-width(@extremum, @break) when (@extremum = 'min') and (@break = @screen__m) {}(có nghĩa là các phần tử nằm trong màn hình có từ 768px trở lên)
+-Thêm biến breakpoint
+Thêm một file <theme_folder>/web/css/source/variables.less vào trong theme ( copy từ theme cha nếu kề thừa từ 1 theme khác hoặc tạo file trống nếu là 1 theme tách biệt )
+Thêm 1 biến vào trong file này, ví du: @your__breakpoint: 1280px;
+-Override thư viện lib/web/css/source/lib/_responsive.less để thêm breakpoint mới
+ +Copy _responsive.less ( từ theme cha hoặc từ thư viện ) tới <your_theme_dir>/web/css/source/lib/
+ +Trong file _responsive.less vừa mới copy ở trên thêm quy tắc cho .media-width
+* Add custom font
+-app/design/frontend/<your_vendor_name>/<your_theme_name>/web/fonts.
+ +Nếu theme sử dụng Magento UI library, bạn có thể thêm code trong file
+.lib-font-face(
+        @family-name: @theme-icon-font-family-name,
+        @font-path: '@{baseDir}fonts/ <path_to_font_file> ',
+        @font-weight: normal,
+        @font-style: normal
+    );
+app/design/frontend/<your_vendor_name>/<your_theme_name>/web/css/source/_typography.less. 
+{@baseDir} là app/design/frontend/<you_vendor_name>/<your_theme_name>/web
+<path_to_font_file> là tên file font nhưng ko có extend.
+
+* Add custom font without Magento Ui
+@font-face {
+     font-family: 'Open Sans';
+     src: url('../fonts/opensans/light/opensans-300.eot');
+     src: url('../fonts/opensans/light/opensans-300.eot?#iefix') format('embedded-opentype'), url('../fonts/opensans/light/opensans-300.woff2') format('woff2'), url('../fonts/opensans/light/opensans-300.woff') format('woff'), url('../fonts/opensans/light/opensans-300.ttf') format('truetype'), url('../fonts/opensans/light/opensans-300.svg#Open Sans') format('svg');
+     font-weight: 300;
+     font-style: normal; }
+* Add custom font from google font
+<head>
+<link rel="stylesheet" type="text/css" src="http://fonts.googleapis.com/css?family=Montserrat" src_type="url" />
+</head>
+(dùng ở trang nào thì thêm vào file đấy, hoặc thêm vào thẻ head của file defaut_head_block.xml)
+*Lời khuyên
+-Tận dụng và sử dụng tối đa mixin để rút gọn code
+-Khai báo biến nếu là biến chung để dễ dàng chỉnh sửa
+-Với những file với “_” ở phía trước, không sử dụng độc lập, nó chỉ được sử dụng để import
+-Nếu viết code vào file để import vào styles-m và styles-l, phải có điều kiện để tránh lặp lại code ở cả 2 file
+-Đọc để viết less chuẩn: https://devdocs.magento.com/guides/v2.3/coding-standards/code-standard-less.html
+
+
