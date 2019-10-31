@@ -1,0 +1,19 @@
+﻿* Magento vendors and themes
+- Theo tài liệu chính thức, một magento theme là một thành phẩn cung cấp một thiết kế trực quan cho toàn bộ ứng dụng sử dụng một sự kết hợp của các template tùy chỉnh, layout, style, or images. Theme được triển khai bởi các nơi cung cấp khác nhau và dự đụnh được phân phối dưới dạng các gói bổ sung cho magento, tương tự như các component khác
+- Mỗi vendor có thể có một hoặc nhiều theme đính kèm nó, nên bạn có thể phát triển các theme khác nhau trong cùng một vendor
+- Mỗi theme có thể có các quy tắc cụ thể và tệp bố cục tùy chỉnh cung cấp tính linh hoạt tốt hơn cho cả quản trị viên và nhà phát triển
+
+* Cấu trúc theme của thư mục vendor/magento/theme-frontend-luma :
+- Trong cấu trúc Magento 2, có 3 file chính để quản lý các hành vi của theme
++ composer.json : Mô tả phụ thuộc và thông tin meta
++  registration.php : Đăng ký theme của bạn trong hệ thống
++ theme.xml : Khai báo một theme trong hệ thống và sử dụng bởi hệ thống magento để nhận ra theme
+- Tất cả file theme, ở trong cấu trúc được giải thích ở phần trên, có thể chia thành Static View Files và Dyamic View Files. Static View FIles không được xử lý bởi server (ảnh, fonts, js) và Dyamic View Files thì được server xử lý trước khi chuyển nội dung đến người dùng (template và layout file)
+- Các Static View Files thường được xuất bản trong các thư mục sau :
++ /pub/static/frontend/<Vendor>/<theme>/<language>
++ <theme_dir>/media/
++ <theme_dir>/web
+
+* Theme mặc định Magento 2
+1. Luma : được tạo với mục đích để bắt đầu sự hiểu biết về cấu trúc của magento 2. rất khuyến khích không nên sử dụng nó để tạo theme của bạn
+2. Blank : cung cấp cấu trúc theme cơ bản, sử dụng như một bản mẫu cho phát triên theme mới trong magento 2

@@ -1,0 +1,4 @@
+﻿Install Grunt
+
+kiểm tra phiên bản nodejs : nodejs -v
+kiểm tra phiên bản Grunt : grunt -version

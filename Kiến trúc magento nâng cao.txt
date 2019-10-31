@@ -1,0 +1,105 @@
+﻿1- Giới thiệu về Object Manager
+Object Manager (Trình quản lý đối tượng)
+
+Việc khởi tạo các đối tượng trong Magento được thực hiện thông qua cái được gọi là trình quản lý đối tượng. Bản thân trình quản lý đối tượng là một thể hiện của class Magento \ Framework \ ObjectManager \ ObjectManager thực hiện class Magento \ Framework \ ObjectManagerInterface.
+
+Lớp ObjectManager định nghĩa ba phương thức sau:
+
+create($type, array $arguments = []): Tạo một object mới
+
+get($type): Lấy ra một object đã được lưu trữ
+
+configure(array $configuration): Cấu hình di
+
+Trình quản lý đối tượng có thể khởi tạo một lớp PHP, có thể là một Model, Helper hoặc Block. Chúng ta có thể nhận được nó bằng cách chuyển ObjectManagerInterface vào hàm tạo của lớp, như sau:
+public function __construct(
+\Magento\Framework\ObjectManagerInterface $objectManager
+)
+{
+$this->_objectManager = $objectManager;
+}
+Trình quản lý đối tượng có các trách nhiệm sau:
+
+Tạo đối tượng trong factories và proxy.
+
+Quyết định tạo ra đối tượng singleton (mặc định) hay shared
+
+Thay thế đối tượng của 1 lớp cho interface được gọi
+
+Tự động khởi tạo các tham số trong các hàm tạo của lớp.
+Cấu hình
+
+Tệp di.xml cấu hình trình quản lý đối tượng và cho nó biết cách xử lý thành phần phụ thuộc.
+
+Tệp này chỉ định lớp triển khai mà trình quản lý đối tượng tạo cho giao diện được khai báo trong hàm tạo của lớp.
+
+Tệp cũng chỉ định liệu trình quản lý đối tượng sẽ tạo một đối tượng cho mọi yêu cầu hay coi đối tượng là một singleton.
+
+Quy tắc sử dụng
+
+Magento framework sử dụng ObjectManager để tạo và chèn các lớp được khai báo trong hàm tạo của bạn. Các lớp không nên yêu cầu ObjectManager là phụ thuộc của hàm tạo.
+
+Bạn không nên gọi trình quản lý đối tượng trực tiếp vì Magento framework xử lý việc này tự động. Việc sử dụng trực tiếp hàm tạo sẽ ngăn việc xác thực kiểu và gợi ý kiểu mà class factory cung cấp.
+
+Tạo đối tượng cũng là một trách nhiệm riêng biệt cần được chuyển đến một lớp chuyên dụng như factory hoặc proxy. Trong hầu hết các trường hợp, Magento framework tạo các lớp này tự động trong quá trình biên dịch mã.
+
+2. Dependency injection(tiêm sự phụ thuộc)
+Magento 2 sử dụng Dependency injection để thay thế chức năng được cung cấp bởi lớp Mage  trong Magento 1
+Dependency Injection là một mẫu thiết kế cho phép một đối tượng A khai báo các phụ thuộc của nó với một đối tượng B bên ngoài cung cấp các phụ thuộc đó. Các phụ thuộc được khai báo bởi A thường là các giao diện lớp và các phụ thuộc B cung cấp là các triển khai cụ thể cho các giao diện đó.
+
+3. Factory
+Factory là các lớp dịch vụ khởi tạo các lớp không thể tiêm, nghĩa là các mô hình đại diện cho một thực thể cơ sở dữ liệu .Nó tạo ra một lớp trừu tượng giữa ObjectManagermã và mã doanh nghiệp.
+Mối quan hệ với ObjectManager
+Magento\Framework\ObjectManager là lớp chịu trách nhiệm khởi tạo các đối tượng trong ứng dụng Magento. Magento cấm tùy thuộc và trực tiếp sử dụng Object Manager ở trong mã của bạn.Các factory là một ngoại lệ cho quy tắc này bởi vì chúng yêu cầu ObjectManager khởi tạo các mô hình cụ thể
+-Viết Factory : 
+Trừ khi bạn yêu cầu hành vi cụ thể cho các lớp xuất xưởng của mình, bạn không cần xác định rõ ràng chúng vì chúng là loại lớp được tạo tự động . Khi bạn tham chiếu một nhà máy trong một hàm tạo của lớp, trình quản lý đối tượng của Magento sẽ tạo lớp của nhà máy nếu nó không tồn tại.
+
+Các nhà máy tuân theo quy ước đặt tên <class-type>Factory, trong đó <class-type>tên của lớp mà nhà máy bắt đầu.
+
+Ví dụ, Magento\Cms\Model\BlockFactorylớp được tạo tự động là một nhà máy khởi tạo lớp Magento\Cms\Model\Block.
+-Sử dụng Factory :
+Bạn có thể lấy phiên bản đơn của một nhà máy cho một mô hình cụ thể bằng cách sử dụng phép nội xạ phụ thuộc .
+
+Ví dụ sau đây cho thấy một lớp nhận BlockFactorycá thể thông qua hàm tạo:
+function __construct ( \Magento\Cms\Model\BlockFactory $blockFactory) {
+    $this->blockFactory = $blockFactory;
+}
+Gọi phương thức create() trên một nhà máy cung cấp cho bạn một thể hiện của lớp cụ thể của nó:
+$block = $this->blockFactory->create();
+Đối với các lớp yêu cầu tham số, hàm create() được tạo tự động chấp nhận một mảng các tham số mà nó truyền vào ObjectManagerđể tạo lớp đích.
+
+Ví dụ dưới đây cho thấy việc xây dựng một Magento\Search\Model\Autocomplete\Itemđối tượng bằng cách chuyển một mảng các tham số đến một factory
+
+$resultItem = $this->itemFactory->create([
+  'title' => $item->getQueryText(),
+  'num_results' => $item->getNumResults(),
+
+-Interfaces
+Các nhà máy đủ thông minh để giải quyết các phụ thuộc và cho phép bạn có được phiên bản chính xác của interface như được xác định trong module của mình di.xml.
+
+Ví dụ: trong CatalogInventory-module, di.xml chứa mục sau:
+<preference for="Magento\CatalogInventory\Api\Data\StockItemInterface" type="Magento\CatalogInventory\Model\Stock\Item" />
+
+*Nó hướng dẫn Magento sử dụng Itemlớp cụ thể ở bất cứ nơi nào StockItemInterfaceđược sử dụng. Khi một lớp trong mô-đun đó bao gồm Factory StockItemInterfaceFactory là phụ thuộc, Magento tạo ra một Factory có khả năng tạo các đối tượng Item cụ thể.
+]);:
+
+4.plugin
+-Một Plugin, hay bộ chặn là một lớp sửa đổi hành vi của các public class, function bằng cách chặn một lệnh gọi hàm và chạy mã trước, sau hoặc xung quanh lệnh gọi hàm đó. điều này cho phép bạn thay thế hoặc mở rộng hành vi của các phương thức gốc, công khai(public) cho bất kì class hoặc interface nào
+- Các phần mở rộng muốn chặn và thay đổi hành vi của một public function có thể tạo ra một lớp plugin
+- Cách tiếp cận đánh chăn này làm giảm xung đột giữa các tiện ích mở rộng thay đổi hành vi của cùng một lớp hoặc phương thức. Việc lớp Plugin của bạn thực hiện thay đổi hành vi của một hàm, lớp nhưng nó không thay đổi chính lớp đó. Magento gọi các thiết bị chặn này theo thứ tự sắp xếp được cấu hình, vì vậy chúng không xung đột với nhau.
+- Hạn chế :
+Các Plugin không thể được sử dụng như sau :
++ Phương thức cuối cùng(final methods)
++ Lớp cuối cùng(final class)
++ Phương thức không công khai(Non-public methods)
++ Các phương thức lớp (class method như phương thức tĩnh:static method)
++ __construct()
++ các hàm ảo(Virtual types)
++ Các đối tượng được khởi tạo trước đó Magento\Framework\Interception là bootstrapping
+* Khai báo một Plugin
+- các tệp di.xml trong module của bạn khai báo một plugin cho một đối tượng
+<config>
+    <type name="{ObservedType}">
+      <plugin name="{pluginName}" type="{PluginClassName}" sortOrder="1" disabled="false" />
+    </type>
+</config>
